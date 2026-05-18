@@ -65,16 +65,40 @@ class OutfitDetailScreen extends StatelessWidget {
           child: Container(
             width: 1080,
             height: 1080,
-            color: Colors.white,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFFF8F6F2),
+                  Color(0xFFE8E1D9),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
             padding: const EdgeInsets.all(24),
             child: Column(
               children: [
-                Text(
-                  outfit.name,
-                  style: const TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Column(
+                  children: [
+                    Text(
+                      outfit.name,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 42,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Styled with Wardrobe AI',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 24),
                 Expanded(
@@ -84,15 +108,27 @@ class OutfitDetailScreen extends StatelessWidget {
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 24,
+                      mainAxisSpacing: 24,
                     ),
                     itemBuilder: (context, index) {
-                      return ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Image.file(
+                      return Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.08),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 6),
+                                    ),
+                                  ],
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(24),
+                                  child: Image.file(
                           File(outfit.imagePaths[index]),
                           fit: BoxFit.cover,
+                        ),
                         ),
                       );
                     },

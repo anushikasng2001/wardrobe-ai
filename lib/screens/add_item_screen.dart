@@ -14,6 +14,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   final ImagePicker _picker = ImagePicker();
   List<XFile> selectedImages = [];
   String selectedCategory = 'Top';
+  String selectedColor = 'Black';
 
   final List<String> categories = [
     'Top',
@@ -22,6 +23,16 @@ class _AddItemScreenState extends State<AddItemScreen> {
     'Shoes',
     'Accessories',
     'Jacket',
+  ];
+
+  final List<String> colors = [
+    'Black',
+    'White',
+    'Blue',
+    'Red',
+    'Green',
+    'Beige',
+    'Grey',
   ];
 
   Future<void> pickImages() async {
@@ -40,6 +51,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
     Navigator.pop(context, {
       'imagePaths': selectedImages.map((e) => e.path).toList(),
       'category': selectedCategory,
+      'color': selectedColor
     });
   }
 
@@ -74,6 +86,27 @@ class _AddItemScreenState extends State<AddItemScreen> {
               },
               decoration: const InputDecoration(
                 labelText: 'Category',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              value: selectedColor,
+              items: colors
+                  .map(
+                    (color) => DropdownMenuItem(
+                      value: color,
+                      child: Text(color),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedColor = value!;
+                });
+              },
+              decoration: const InputDecoration(
+                labelText: 'Color',
                 border: OutlineInputBorder(),
               ),
             ),

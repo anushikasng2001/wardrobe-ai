@@ -44,6 +44,16 @@ class _OutfitScreenState extends State<OutfitScreen> {
     saveOutfits();
   }
 
+  void toggleFavorite(int index) {
+    setState(() {
+      outfits[index] = outfits[index].copyWith(
+        isFavorite: !outfits[index].isFavorite,
+      );
+    });
+
+    saveOutfits();
+  }
+
   Widget buildOutfitPreview(List<String> images) {
     final displayImages = images.take(4).toList();
 
@@ -179,11 +189,31 @@ class _OutfitScreenState extends State<OutfitScreen> {
                         ),
                         Padding(
                           padding: const EdgeInsets.all(8),
-                          child: Text(
-                            outfit.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  outfit.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  outfit.isFavorite
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color: outfit.isFavorite
+                                      ? Colors.red
+                                      : Colors.grey,
+                                ),
+                                onPressed: () {
+                                  toggleFavorite(index);
+                                },
+                              ),
+                            ],
                           ),
                         ),
                       ],

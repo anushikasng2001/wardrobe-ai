@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wardrobe_ai/screens/outfit_detail_screen.dart';
 
 import '../models/outfit.dart';
 import '../models/wardrobe_item.dart';
@@ -75,6 +76,181 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
   Future<void> saveOutfits() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('outfits', Outfit.encode(outfits));
+  }
+
+  void showGenerateDialog() {
+    String selectedOccasion = 'Casual';
+    String selectedWeather = 'Hot';
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Generate Outfit'),
+
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+
+                  DropdownButton<String>(
+                    value: selectedOccasion,
+                    isExpanded: true,
+                    items: [
+                      'Casual',
+                      'Office',
+                      'Party',
+                      'Gym',
+                    ]
+                        .map(
+                          (e) => DropdownMenuItem(
+                            value: e,
+                            child: Text(e),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      setDialogState(() {
+                        selectedOccasion = value!;
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  DropdownButton<String>(
+                    value: selectedWeather,
+                    isExpanded: true,
+                    items: [
+                      'Hot',
+                      'Cold',
+                      'Rainy',
+                    ]
+                        .map(
+                          (e) => DropdownMenuItem(
+                            value: e,
+                            child: Text(e),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      setDialogState(() {
+                        selectedWeather = value!;
+                      });
+                    },
+                  ),
+                ],
+              ),
+
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+
+                    generateOutfit(
+                      selectedOccasion,
+                      selectedWeather,
+                    );
+                  },
+                  child: const Text('Generate'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  bool colorsMatch(String topColor, String bottomColor) {
+    final goodMatches = {
+      'Black': ['White', 'Grey', 'Beige', 'Blue', 'Black'],
+      'White': ['Black', 'Blue', 'Grey', 'Beige'],
+      'Blue': ['White', 'Black', 'Grey'],
+      'Beige': ['Black', 'White', 'Brown'],
+      'Grey': ['Black', 'White', 'Blue'],
+    };
+
+    return goodMatches[topColor]?.contains(bottomColor) ?? true;
+  }
+
+  void generateOutfit(
+    String occasion,
+    String weather,
+  ) {
+    final tops =
+        items.where((i) => i.category == 'Top').toList();
+
+    final bottoms =
+        items.where((i) => i.category == 'Bottom').toList();
+
+    final shoes =
+        items.where((i) => i.category == 'Shoes').toList();
+
+    final jackets =
+        items.where((i) => i.category == 'Jacket').toList();
+
+    if (tops.isEmpty || bottoms.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Not enough wardrobe items'),
+        ),
+      );
+      return;
+    }
+
+    tops.shuffle();
+    bottoms.shuffle();
+
+    WardrobeItem? selectedTop;
+    WardrobeItem? selectedBottom;
+
+    for (final top in tops) {
+      for (final bottom in bottoms) {
+        if (colorsMatch(top.color, bottom.color)) {
+          selectedTop = top;
+          selectedBottom = bottom;
+          break;
+        }
+      }
+    }
+
+    selectedTop ??= tops.first;
+    selectedBottom ??= bottoms.first;
+
+    final selected = <String>[
+      selectedTop.imagePath,
+      selectedBottom.imagePath,
+    ];
+
+    if (shoes.isNotEmpty) {
+      shoes.shuffle();
+      selected.add(shoes.first.imagePath);
+    }
+
+    if (weather == 'Cold' && jackets.isNotEmpty) {
+      jackets.shuffle();
+      selected.add(jackets.first.imagePath);
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OutfitDetailScreen(
+          outfit: Outfit(
+            id: DateTime.now().toString(),
+            name: '$occasion Outfit',
+            imagePaths: selected,
+          ),
+        ),
+      ),
+    );
   }
 
   void _showDeleteSheet(WardrobeItem item) {
@@ -194,7 +370,24 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(item.category),
+                            Column(
+                              children: [
+                                Text(
+                                  item.category,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  item.color,
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       );
@@ -221,6 +414,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                 final imagePaths =
                     List<String>.from(result['imagePaths']);
                 final category = result['category'];
+                final color = result['color'];
 
                 setState(() {
                   for (final path in imagePaths) {
@@ -228,6 +422,8 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                       WardrobeItem(
                         imagePath: path,
                         category: category,
+                        color: color,
+                        tags: [],
                       ),
                     );
                   }
@@ -262,6 +458,14 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
 
                 saveOutfits();
               }
+            },
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton(
+            heroTag: 'generate_ai',
+            child: const Icon(Icons.auto_awesome),
+            onPressed: () {
+              showGenerateDialog();
             },
           ),
         ],

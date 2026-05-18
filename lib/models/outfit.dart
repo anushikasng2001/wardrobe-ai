@@ -4,11 +4,13 @@ class Outfit {
   final String id;
   final List<String> imagePaths;
   final String name;
+  final bool isFavorite;
 
   Outfit({
     required this.id,
     required this.imagePaths,
     required this.name,
+    this.isFavorite = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -16,6 +18,7 @@ class Outfit {
       'id': id,
       'imagePaths': imagePaths,
       'name': name,
+      'isFavorite': isFavorite,
     };
   }
 
@@ -24,11 +27,14 @@ class Outfit {
       id: map['id'],
       imagePaths: List<String>.from(map['imagePaths']),
       name: map['name'],
+      isFavorite: map['isFavorite'] ?? false,
     );
   }
 
   static String encode(List<Outfit> outfits) =>
-      jsonEncode(outfits.map((o) => o.toMap()).toList());
+      jsonEncode(
+        outfits.map((o) => o.toMap()).toList(),
+      );
 
   static List<Outfit> decode(String outfits) =>
       (jsonDecode(outfits) as List<dynamic>)
@@ -39,12 +45,13 @@ class Outfit {
     String? id,
     String? name,
     List<String>? imagePaths,
+    bool? isFavorite,
   }) {
     return Outfit(
       id: id ?? this.id,
       name: name ?? this.name,
       imagePaths: imagePaths ?? this.imagePaths,
+      isFavorite: isFavorite ?? this.isFavorite,
     );
   }
-
 }
