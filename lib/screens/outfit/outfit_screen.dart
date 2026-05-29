@@ -1,8 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wardrobe_ai/widgets/safe_image.dart';
 
-import '../models/outfit.dart';
+import '../../models/outfit.dart';
 import 'outfit_detail_screen.dart';
 
 class OutfitScreen extends StatefulWidget {
@@ -14,6 +14,14 @@ class OutfitScreen extends StatefulWidget {
 
 class _OutfitScreenState extends State<OutfitScreen> {
   List<Outfit> outfits = [];
+  bool showFavoritesOnly = false;
+
+  List<Outfit> get displayedOutfits {
+    if (showFavoritesOnly) {
+      return outfits.where((o) => o.isFavorite).toList();
+    }
+    return outfits;
+  }
 
   @override
   void initState() {
@@ -37,14 +45,19 @@ class _OutfitScreenState extends State<OutfitScreen> {
     await prefs.setString('outfits', Outfit.encode(outfits));
   }
 
-  void deleteOutfit(int index) {
+  void deleteOutfit(String id) {
     setState(() {
-      outfits.removeAt(index);
+      outfits.removeWhere((o) => o.id == id);
     });
+
     saveOutfits();
   }
 
-  void toggleFavorite(int index) {
+  void toggleFavorite(String id) {
+    final index = outfits.indexWhere((o) => o.id == id);
+
+    if (index == -1) return;
+
     setState(() {
       outfits[index] = outfits[index].copyWith(
         isFavorite: !outfits[index].isFavorite,
@@ -58,8 +71,8 @@ class _OutfitScreenState extends State<OutfitScreen> {
     final displayImages = images.take(4).toList();
 
     if (displayImages.length == 1) {
-      return Image.file(
-        File(displayImages.first),
+      return SafeImage(
+        path: displayImages.first,
         fit: BoxFit.cover,
         width: double.infinity,
       );
@@ -75,16 +88,22 @@ class _OutfitScreenState extends State<OutfitScreen> {
       ),
       itemCount: displayImages.length,
       itemBuilder: (context, index) {
-        return Image.file(
-          File(displayImages[index]),
+        return SafeImage(
+          path: displayImages[index],
           fit: BoxFit.cover,
         );
       },
     );
   }
 
-  Future<void> renameOutfit(int index) async {
-    final controller = TextEditingController(text: outfits[index].name);
+  Future<void> renameOutfit(String outfitId) async {
+    final outfitIndex = outfits.indexWhere((o) => o.id == outfitId);
+
+    if (outfitIndex == -1) return;
+
+    final controller = TextEditingController(
+      text: outfits[outfitIndex].name,
+    );
 
     final newName = await showDialog<String>(
       context: context,
@@ -114,11 +133,12 @@ class _OutfitScreenState extends State<OutfitScreen> {
     if (newName == null || newName.isEmpty) return;
 
     setState(() {
-      outfits[index] = outfits[index].copyWith(name: newName);
+      outfits[outfitIndex] = outfits[outfitIndex].copyWith(
+        name: newName,
+      );
     });
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('outfits', Outfit.encode(outfits));
+    await saveOutfits();
   }
 
   @override
@@ -126,6 +146,20 @@ class _OutfitScreenState extends State<OutfitScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Outfits'),
+        actions: [
+          IconButton(
+            icon: Icon(
+              showFavoritesOnly
+                  ? Icons.favorite
+                  : Icons.favorite_border,
+            ),
+            onPressed: () {
+              setState(() {
+                showFavoritesOnly = !showFavoritesOnly;
+              });
+            },
+          ),
+        ],
       ),
       body: outfits.isEmpty
           ? const Center(
@@ -138,9 +172,9 @@ class _OutfitScreenState extends State<OutfitScreen> {
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
               ),
-              itemCount: outfits.length,
+              itemCount: displayedOutfits.length,
               itemBuilder: (context, index) {
-                final outfit = outfits[index];
+                final outfit = displayedOutfits[index];
 
                 return GestureDetector(
                   onTap: () {
@@ -162,7 +196,7 @@ class _OutfitScreenState extends State<OutfitScreen> {
                           title: const Text('Rename'),
                           onTap: () {
                             Navigator.pop(context);
-                            renameOutfit(index);
+                            renameOutfit(outfit.id);
                           },
                         ),
                         ListTile(
@@ -170,7 +204,7 @@ class _OutfitScreenState extends State<OutfitScreen> {
                           title: const Text('Delete'),
                           onTap: () {
                             Navigator.pop(context);
-                            deleteOutfit(index);
+                            deleteOutfit(outfit.id);
                           },
                         ),
                       ],
@@ -210,7 +244,7 @@ class _OutfitScreenState extends State<OutfitScreen> {
                                       : Colors.grey,
                                 ),
                                 onPressed: () {
-                                  toggleFavorite(index);
+                                  toggleFavorite(outfit.id);
                                 },
                               ),
                             ],

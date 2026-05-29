@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:wardrobe_ai/widgets/safe_image.dart';
 import '../models/wardrobe_item.dart';
 
 class CreateOutfitScreen extends StatefulWidget {
@@ -73,10 +74,7 @@ class _CreateOutfitScreenState extends State<CreateOutfitScreen> {
                   child: Stack(
                     children: [
                       Positioned.fill(
-                        child: Image.file(
-                          File(item.imagePath),
-                          fit: BoxFit.cover,
-                        ),
+                        child: SafeImage(path: item.imagePath),
                       ),
                       if (isSelected)
                         const Positioned(

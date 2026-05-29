@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:wardrobe_ai/widgets/safe_image.dart';
 
 class AddItemScreen extends StatefulWidget {
   const AddItemScreen({super.key});
@@ -121,10 +120,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   mainAxisSpacing: 8,
                 ),
                 itemBuilder: (context, index) {
-                  return Image.file(
-                    File(selectedImages[index].path),
-                    fit: BoxFit.cover,
-                  );
+                  return SafeImage(path: selectedImages[index].path,);
                 },
               ),
             ),

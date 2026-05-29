@@ -5,19 +5,125 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wardrobe_ai/models/wardrobe_item.dart';
+import 'package:wardrobe_ai/widgets/safe_image.dart';
 
-import '../models/outfit.dart';
+import '../../models/outfit.dart';
 import 'package:flutter/rendering.dart';
 
-class OutfitDetailScreen extends StatelessWidget {
+class OutfitDetailScreen extends StatefulWidget {
   final Outfit outfit;
 
-  OutfitDetailScreen({
+  const OutfitDetailScreen({
     super.key,
     required this.outfit,
   });
 
+   @override
+    State<OutfitDetailScreen> createState() =>
+        _OutfitDetailScreenState();
+  }
+
+  class _OutfitDetailScreenState extends State<OutfitDetailScreen> {
+    bool isSaving = false;
+
   final GlobalKey repaintKey = GlobalKey();
+
+  Future<void> markOutfitAsWorn(BuildContext context) async {
+
+    if (isSaving) return;
+
+    setState(() {
+      isSaving = true;
+    });
+
+    try {
+
+      final prefs = await SharedPreferences.getInstance();
+
+      final data = prefs.getString('wardrobe_items');
+
+      if (data == null) {
+
+        if (!context.mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No wardrobe data found'),
+          ),
+        );
+
+        return;
+      }
+
+      List<WardrobeItem> items = WardrobeItem.decode(data);
+
+      final now = DateTime.now();
+
+      bool updated = false;
+
+      items = items.map((item) {
+
+        if (widget.outfit.imagePaths.contains(item.imagePath)) {
+
+          updated = true;
+
+          return item.copyWith(
+            wearCount: item.wearCount + 1,
+            lastWorn: now,
+          );
+        }
+
+        return item;
+
+      }).toList();
+
+      if (!updated) {
+
+        if (!context.mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No matching wardrobe items found'),
+          ),
+        );
+
+        return;
+      }
+
+      await prefs.setString(
+        'wardrobe_items',
+        WardrobeItem.encode(items),
+      );
+
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Outfit marked as worn'),
+        ),
+      );
+
+    } catch (e) {
+
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Something went wrong'),
+        ),
+      );
+
+    } finally {
+
+      if (mounted) {
+        setState(() {
+          isSaving = false;
+        });
+      }
+    }
+  }
 
   Future<void> _shareOutfit(BuildContext context) async {
     try {
@@ -25,7 +131,9 @@ class OutfitDetailScreen extends StatelessWidget {
           repaintKey.currentContext!.findRenderObject()
               as RenderRepaintBoundary;
 
-      final ui.Image image = await boundary.toImage(pixelRatio: 3);
+      final ui.Image image = await boundary.toImage(
+        pixelRatio: 4,
+      );
       final ByteData? byteData =
           await image.toByteData(format: ui.ImageByteFormat.png);
 
@@ -51,13 +159,32 @@ class OutfitDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(outfit.name),
+        title: Text(widget.outfit.name),
         actions: [
           IconButton(
             icon: const Icon(Icons.share),
             onPressed: () => _shareOutfit(context),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: isSaving
+            ? null
+            : () => markOutfitAsWorn(context),
+
+        icon: isSaving
+            ? const SizedBox(
+                height: 18,
+                width: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                ),
+              )
+            : const Icon(Icons.check),
+
+        label: Text(
+          isSaving ? 'Saving...' : 'Worn Today',
+        ),
       ),
       body: Center(
         child: RepaintBoundary(
@@ -81,7 +208,7 @@ class OutfitDetailScreen extends StatelessWidget {
                 Column(
                   children: [
                     Text(
-                      outfit.name,
+                      widget.outfit.name,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 42,
@@ -104,7 +231,9 @@ class OutfitDetailScreen extends StatelessWidget {
                 Expanded(
                   child: GridView.builder(
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: outfit.imagePaths.length,
+                    padding: EdgeInsets.zero,
+                    itemCount: widget.outfit.imagePaths.length,
+                    shrinkWrap: true,
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
@@ -125,10 +254,7 @@ class OutfitDetailScreen extends StatelessWidget {
                                 ),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(24),
-                                  child: Image.file(
-                          File(outfit.imagePaths[index]),
-                          fit: BoxFit.cover,
-                        ),
+                                  child: SafeImage(path: widget.outfit.imagePaths[index]),
                         ),
                       );
                     },

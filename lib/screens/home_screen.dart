@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'wardrobe_screen.dart';
-import 'outfit_screen.dart';
+import 'wardrobe/wardrobe_screen.dart';
+import 'outfit/outfit_screen.dart';
 import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {

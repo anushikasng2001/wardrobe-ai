@@ -1,16 +1,19 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wardrobe_ai/screens/outfit_detail_screen.dart';
+import 'package:wardrobe_ai/screens/outfit/outfit_detail_screen.dart';
+import 'package:wardrobe_ai/services/wardrobe_service.dart';
+import 'package:wardrobe_ai/widgets/safe_image.dart';
 
-import '../models/outfit.dart';
-import '../models/wardrobe_item.dart';
+import '../../models/outfit.dart';
+import '../../models/wardrobe_item.dart';
 
-import 'add_item_screen.dart';
-import 'create_outfit_screen.dart';
+import '../../services/outfit_service.dart';
+import '../../services/storage_service.dart';
+import '../../services/outfit_generator_service.dart';
 
-import 'outfit_screen.dart';
+import '../add_item_screen.dart';
+import '../create_outfit_screen.dart';
+
+import '../outfit/outfit_screen.dart';
 
 
 class WardrobeScreen extends StatefulWidget {
@@ -21,61 +24,103 @@ class WardrobeScreen extends StatefulWidget {
 }
 
 class _WardrobeScreenState extends State<WardrobeScreen> {
-  String selectedCategory = 'All';
-
-  final List<String> categories = [
-    'All',
-    'Top',
-    'Bottom',
-    'Dress',
-    'Shoes',
-    'Accessories',
-    'Jacket',
-  ];
 
   List<WardrobeItem> items = [];
   List<Outfit> outfits = [];
 
+  String selectedCategory = 'All';
+  String searchQuery = '';
+  String sortOption = 'Recent';
+
   List<WardrobeItem> get filteredItems {
-    if (selectedCategory == 'All') return items;
-    return items.where((i) => i.category == selectedCategory).toList();
+    return WardrobeService.getFilteredItems(
+      items: items,
+      selectedCategory: selectedCategory,
+      searchQuery: searchQuery,
+      sortOption: sortOption,
+    );
   }
+
+
 
   @override
   void initState() {
     super.initState();
-    loadItems();
-    loadOutfits();
+    initializeData();
   }
 
-  Future<void> loadItems() async {
-    final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getString('wardrobe_items');
-    if (data != null) {
-      setState(() {
-        items = WardrobeItem.decode(data);
-      });
+  Future<void> initializeData() async {
+
+    final loadedItems = await StorageService.loadItems();
+    final loadedOutfits = await StorageService.loadOutfits();
+
+    setState(() {
+      items = loadedItems;
+      outfits = loadedOutfits;
+    });
+  }
+
+  void _deleteItem(WardrobeItem item) {
+
+    final removedOutfits =
+        OutfitService.deleteItem(
+          item: item,
+          items: items,
+          outfits: outfits,
+        );
+
+    setState(() {
+      items = List.from(items);
+      outfits = List.from(outfits);
+    });
+
+    StorageService.saveItems(
+      items,
+    );
+
+    StorageService.saveOutfits(
+      outfits,
+    );
+
+    if (removedOutfits) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Some outfits were removed because items were deleted.',
+          ),
+        ),
+      );
     }
   }
 
-  Future<void> loadOutfits() async {
-    final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getString('outfits');
-    if (data != null) {
-      setState(() {
-        outfits = Outfit.decode(data);
-      });
+  void _generateOutfit(
+    String occasion,
+    String weather,
+  ) {
+    final outfit =
+        OutfitGeneratorService.generateOutfit(
+      items: items,
+      occasion: occasion,
+      weather: weather,
+    );
+
+    if (outfit == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Not enough wardrobe items'),
+        ),
+      );
+      return;
     }
-  }
 
-  Future<void> saveItems() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('wardrobe_items', WardrobeItem.encode(items));
-  }
-
-  Future<void> saveOutfits() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('outfits', Outfit.encode(outfits));
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OutfitDetailScreen(
+          outfit: outfit,
+        ),
+      ),
+    );
   }
 
   void showGenerateDialog() {
@@ -153,7 +198,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                   onPressed: () {
                     Navigator.pop(context);
 
-                    generateOutfit(
+                    _generateOutfit(
                       selectedOccasion,
                       selectedWeather,
                     );
@@ -165,91 +210,6 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
           },
         );
       },
-    );
-  }
-
-  bool colorsMatch(String topColor, String bottomColor) {
-    final goodMatches = {
-      'Black': ['White', 'Grey', 'Beige', 'Blue', 'Black'],
-      'White': ['Black', 'Blue', 'Grey', 'Beige'],
-      'Blue': ['White', 'Black', 'Grey'],
-      'Beige': ['Black', 'White', 'Brown'],
-      'Grey': ['Black', 'White', 'Blue'],
-    };
-
-    return goodMatches[topColor]?.contains(bottomColor) ?? true;
-  }
-
-  void generateOutfit(
-    String occasion,
-    String weather,
-  ) {
-    final tops =
-        items.where((i) => i.category == 'Top').toList();
-
-    final bottoms =
-        items.where((i) => i.category == 'Bottom').toList();
-
-    final shoes =
-        items.where((i) => i.category == 'Shoes').toList();
-
-    final jackets =
-        items.where((i) => i.category == 'Jacket').toList();
-
-    if (tops.isEmpty || bottoms.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Not enough wardrobe items'),
-        ),
-      );
-      return;
-    }
-
-    tops.shuffle();
-    bottoms.shuffle();
-
-    WardrobeItem? selectedTop;
-    WardrobeItem? selectedBottom;
-
-    for (final top in tops) {
-      for (final bottom in bottoms) {
-        if (colorsMatch(top.color, bottom.color)) {
-          selectedTop = top;
-          selectedBottom = bottom;
-          break;
-        }
-      }
-    }
-
-    selectedTop ??= tops.first;
-    selectedBottom ??= bottoms.first;
-
-    final selected = <String>[
-      selectedTop.imagePath,
-      selectedBottom.imagePath,
-    ];
-
-    if (shoes.isNotEmpty) {
-      shoes.shuffle();
-      selected.add(shoes.first.imagePath);
-    }
-
-    if (weather == 'Cold' && jackets.isNotEmpty) {
-      jackets.shuffle();
-      selected.add(jackets.first.imagePath);
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => OutfitDetailScreen(
-          outfit: Outfit(
-            id: DateTime.now().toString(),
-            name: '$occasion Outfit',
-            imagePaths: selected,
-          ),
-        ),
-      ),
     );
   }
 
@@ -280,20 +240,6 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
     );
   }
 
-  void _deleteItem(WardrobeItem item) {
-    setState(() {
-      items.remove(item);
-
-      // Remove deleted item from outfits as well (important!)
-      for (final outfit in outfits) {
-        outfit.imagePaths.remove(item.imagePath);
-      }
-    });
-
-    saveItems();
-    saveOutfits();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -311,6 +257,28 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
               );
             },
           ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.sort),
+            onSelected: (value) {
+              setState(() {
+                sortOption = value;
+              });
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: 'Recent',
+                child: Text('Recent'),
+              ),
+              const PopupMenuItem(
+                value: 'Most Worn',
+                child: Text('Most Worn'),
+              ),
+              const PopupMenuItem(
+                value: 'Least Worn',
+                child: Text('Least Worn'),
+              ),
+            ],
+          ),
         ],
       ),
       body: Column(
@@ -320,7 +288,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              children: categories.map((category) {
+              children: WardrobeService.categories.map((category) {
                 final isSelected = selectedCategory == category;
 
                 return Padding(
@@ -336,6 +304,23 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                   ),
                 );
               }).toList(),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Search wardrobe...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value;
+                });
+              },
             ),
           ),
           Expanded(
@@ -362,8 +347,8 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                             Expanded(
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
-                                child: Image.file(
-                                  File(item.imagePath),
+                                child: SafeImage(
+                                  path: item.imagePath,
                                   fit: BoxFit.cover,
                                   width: double.infinity,
                                 ),
@@ -378,7 +363,9 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
+
                                 const SizedBox(height: 2),
+
                                 Text(
                                   item.color,
                                   style: TextStyle(
@@ -386,6 +373,27 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                                     fontSize: 12,
                                   ),
                                 ),
+
+                                const SizedBox(height: 4),
+
+                                Text(
+                                  '${item.wearCount} wears',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade500,
+                                    fontSize: 11,
+                                  ),
+                                ),
+
+                                if (item.lastWorn != null)
+                                  Text(
+                                    'Last worn: '
+                                    '${item.lastWorn!.day}/'
+                                    '${item.lastWorn!.month}',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade500,
+                                      fontSize: 10,
+                                    ),
+                                  ),
                               ],
                             ),
                           ],
@@ -420,16 +428,18 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                   for (final path in imagePaths) {
                     items.add(
                       WardrobeItem(
-                        imagePath: path,
-                        category: category,
-                        color: color,
-                        tags: [],
+                          id: DateTime.now().microsecondsSinceEpoch.toString(),
+                          imagePath: path,
+                          category: category,
+                          color: color,
+                          tags: [],
+                          createdAt: DateTime.now()
                       ),
                     );
                   }
                 });
 
-                saveItems();
+                StorageService.saveItems(items);
               }
             },
           ),
@@ -449,14 +459,15 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                 setState(() {
                   outfits.add(
                     Outfit(
-                      id: DateTime.now().toIso8601String(),
+                      id: DateTime.now().microsecondsSinceEpoch.toString(),
                       name: result['name'],
                       imagePaths: List<String>.from(result['items']),
-                    ),
+                      createdAt: DateTime.now(),
+                    )
                   );
                 });
 
-                saveOutfits();
+                StorageService.saveOutfits(outfits);
               }
             },
           ),
