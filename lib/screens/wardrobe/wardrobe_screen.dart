@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:wardrobe_ai/screens/add_item_screen.dart';
 import 'package:wardrobe_ai/screens/outfit/outfit_detail_screen.dart';
 import 'package:wardrobe_ai/services/wardrobe_service.dart';
-import 'package:wardrobe_ai/widgets/safe_image.dart';
+import 'package:wardrobe_ai/widgets/wardrobe/category_filter_bar.dart';
+import 'package:wardrobe_ai/widgets/wardrobe/delete_item_sheet.dart';
+import 'package:wardrobe_ai/widgets/wardrobe/wardrobe_app_bar.dart';
+import 'package:wardrobe_ai/widgets/wardrobe/wardrobe_fab_column.dart';
+import 'package:wardrobe_ai/widgets/wardrobe/wardrobe_grid.dart';
+import 'package:wardrobe_ai/widgets/wardrobe/wardrobe_search_bar.dart';
 
 import '../../models/outfit.dart';
 import '../../models/wardrobe_item.dart';
@@ -9,9 +15,6 @@ import '../../models/wardrobe_item.dart';
 import '../../services/outfit_service.dart';
 import '../../services/storage_service.dart';
 import '../../services/outfit_generator_service.dart';
-
-import '../add_item_screen.dart';
-import '../create_outfit_screen.dart';
 
 import '../outfit/outfit_screen.dart';
 
@@ -32,27 +35,27 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
   String searchQuery = '';
   String sortOption = 'Recent';
 
-  List<WardrobeItem> get filteredItems {
-    return WardrobeService.getFilteredItems(
+  List<WardrobeItem> get filteredItems =>
+    WardrobeService.getFilteredItems(
       items: items,
       selectedCategory: selectedCategory,
       searchQuery: searchQuery,
       sortOption: sortOption,
     );
-  }
 
 
 
   @override
   void initState() {
     super.initState();
-    initializeData();
+    _loadData();
   }
 
-  Future<void> initializeData() async {
-
+  Future<void> _loadData() async {
     final loadedItems = await StorageService.loadItems();
     final loadedOutfits = await StorageService.loadOutfits();
+
+    if (!mounted) return;
 
     setState(() {
       items = loadedItems;
@@ -60,27 +63,53 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
     });
   }
 
-  void _deleteItem(WardrobeItem item) {
+  Future<void> _saveData() async {
+    await StorageService.saveItems(items);
+    await StorageService.saveOutfits(outfits);
+  }
 
-    final removedOutfits =
-        OutfitService.deleteItem(
-          item: item,
-          items: items,
-          outfits: outfits,
-        );
+  Future<void> _addItem() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const AddItemScreen(),
+      ),
+    );
+
+    if (result == null) return;
+
+    final imagePaths = List<String>.from(result['imagePaths']);
+    final category = result['category'];
+    final color = result['color'];
 
     setState(() {
-      items = List.from(items);
-      outfits = List.from(outfits);
+      for (final path in imagePaths) {
+        items.add(
+          WardrobeItem(
+            id: DateTime.now().microsecondsSinceEpoch.toString(),
+            imagePath: path,
+            category: category,
+            color: color,
+            tags: [],
+            createdAt: DateTime.now(),
+          ),
+        );
+      }
     });
 
-    StorageService.saveItems(
-      items,
+    await _saveData();
+  }
+
+  Future<void> _deleteItem(WardrobeItem item) async {
+    final removedOutfits = OutfitService.deleteItem(
+      item: item,
+      items: items,
+      outfits: outfits,
     );
 
-    StorageService.saveOutfits(
-      outfits,
-    );
+    setState(() {});
+
+    await _saveData();
 
     if (removedOutfits) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -123,363 +152,76 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
     );
   }
 
-  void showGenerateDialog() {
-    String selectedOccasion = 'Casual';
-    String selectedWeather = 'Hot';
+  void _changeSortOption(String value) {
+    setState(() {
+      sortOption = value;
+    });
+  }
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Generate Outfit'),
+  void _changeCategory(String category) {
+    setState(() {
+      selectedCategory = category;
+    });
+  }
 
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+  void _changeSearchQuery(String value) {
+    setState(() {
+      searchQuery = value;
+    });
+  }
 
-                  DropdownButton<String>(
-                    value: selectedOccasion,
-                    isExpanded: true,
-                    items: [
-                      'Casual',
-                      'Office',
-                      'Party',
-                      'Gym',
-                    ]
-                        .map(
-                          (e) => DropdownMenuItem(
-                            value: e,
-                            child: Text(e),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      setDialogState(() {
-                        selectedOccasion = value!;
-                      });
-                    },
-                  ),
+  Future<void> _addOutfit(Outfit outfit) async {
+    setState(() {
+      outfits.add(outfit);
+    });
 
-                  const SizedBox(height: 16),
+    await _saveData();
+  }
 
-                  DropdownButton<String>(
-                    value: selectedWeather,
-                    isExpanded: true,
-                    items: [
-                      'Hot',
-                      'Cold',
-                      'Rainy',
-                    ]
-                        .map(
-                          (e) => DropdownMenuItem(
-                            value: e,
-                            child: Text(e),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      setDialogState(() {
-                        selectedWeather = value!;
-                      });
-                    },
-                  ),
-                ],
-              ),
-
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
-
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-
-                    _generateOutfit(
-                      selectedOccasion,
-                      selectedWeather,
-                    );
-                  },
-                  child: const Text('Generate'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+  Future<void> _openOutfits() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const OutfitScreen(),
+      ),
     );
   }
 
-  void _showDeleteSheet(WardrobeItem item) {
-    showModalBottomSheet(
+  void _showDeleteItem(WardrobeItem item) {
+    showDeleteItemSheet(
       context: context,
-      builder: (_) {
-        return SafeArea(
-          child: Wrap(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Delete Item'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _deleteItem(item);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.close),
-                title: const Text('Cancel'),
-                onTap: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-        );
-      },
+      onDelete: () => _deleteItem(item),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Wardrobe'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.grid_view),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const OutfitScreen(),
-                ),
-              );
-            },
-          ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.sort),
-            onSelected: (value) {
-              setState(() {
-                sortOption = value;
-              });
-            },
-            itemBuilder: (_) => [
-              const PopupMenuItem(
-                value: 'Recent',
-                child: Text('Recent'),
-              ),
-              const PopupMenuItem(
-                value: 'Most Worn',
-                child: Text('Most Worn'),
-              ),
-              const PopupMenuItem(
-                value: 'Least Worn',
-                child: Text('Least Worn'),
-              ),
-            ],
-          ),
-        ],
+      appBar: WardrobeAppBar(
+        onOpenOutfits: _openOutfits,
+        onSortChanged: _changeSortOption,
       ),
       body: Column(
         children: [
-          SizedBox(
-            height: 56,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              children: WardrobeService.categories.map((category) {
-                final isSelected = selectedCategory == category;
-
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: ChoiceChip(
-                    label: Text(category),
-                    selected: isSelected,
-                    onSelected: (_) {
-                      setState(() {
-                        selectedCategory = category;
-                      });
-                    },
-                  ),
-                );
-              }).toList(),
-            ),
+          CategoryFilterBar(
+            categories: WardrobeService.categories,
+            selectedCategory: selectedCategory,
+            onCategorySelected: _changeCategory,
           ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search wardrobe...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  searchQuery = value;
-                });
-              },
-            ),
+          WardrobeSearchBar(
+            onChanged: _changeSearchQuery,
           ),
-          Expanded(
-            child: filteredItems.isEmpty
-                ? const Center(
-                    child: Text('No items in this category'),
-                  )
-                : GridView.builder(
-                    padding: const EdgeInsets.all(12),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                    ),
-                    itemCount: filteredItems.length,
-                    itemBuilder: (context, index) {
-                      final item = filteredItems[index];
-
-                      return GestureDetector(
-                        onLongPress: () => _showDeleteSheet(item),
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: SafeImage(
-                                  path: item.imagePath,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Column(
-                              children: [
-                                Text(
-                                  item.category,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-
-                                const SizedBox(height: 2),
-
-                                Text(
-                                  item.color,
-                                  style: TextStyle(
-                                    color: Colors.grey.shade600,
-                                    fontSize: 12,
-                                  ),
-                                ),
-
-                                const SizedBox(height: 4),
-
-                                Text(
-                                  '${item.wearCount} wears',
-                                  style: TextStyle(
-                                    color: Colors.grey.shade500,
-                                    fontSize: 11,
-                                  ),
-                                ),
-
-                                if (item.lastWorn != null)
-                                  Text(
-                                    'Last worn: '
-                                    '${item.lastWorn!.day}/'
-                                    '${item.lastWorn!.month}',
-                                    style: TextStyle(
-                                      color: Colors.grey.shade500,
-                                      fontSize: 10,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+          WardrobeGrid(
+            items: filteredItems,
+            onItemLongPress: _showDeleteItem,
           ),
         ],
       ),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton(
-            heroTag: 'add_item',
-            child: const Icon(Icons.add),
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const AddItemScreen(),
-                ),
-              );
-
-              if (result != null) {
-                final imagePaths =
-                    List<String>.from(result['imagePaths']);
-                final category = result['category'];
-                final color = result['color'];
-
-                setState(() {
-                  for (final path in imagePaths) {
-                    items.add(
-                      WardrobeItem(
-                          id: DateTime.now().microsecondsSinceEpoch.toString(),
-                          imagePath: path,
-                          category: category,
-                          color: color,
-                          tags: [],
-                          createdAt: DateTime.now()
-                      ),
-                    );
-                  }
-                });
-
-                StorageService.saveItems(items);
-              }
-            },
-          ),
-          const SizedBox(height: 12),
-          FloatingActionButton(
-            heroTag: 'create_outfit',
-            child: const Icon(Icons.style),
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => CreateOutfitScreen(items: items),
-                ),
-              );
-
-              if (result != null) {
-                setState(() {
-                  outfits.add(
-                    Outfit(
-                      id: DateTime.now().microsecondsSinceEpoch.toString(),
-                      name: result['name'],
-                      imagePaths: List<String>.from(result['items']),
-                      createdAt: DateTime.now(),
-                    )
-                  );
-                });
-
-                StorageService.saveOutfits(outfits);
-              }
-            },
-          ),
-          const SizedBox(height: 12),
-          FloatingActionButton(
-            heroTag: 'generate_ai',
-            child: const Icon(Icons.auto_awesome),
-            onPressed: () {
-              showGenerateDialog();
-            },
-          ),
-        ],
+      floatingActionButton: WardrobeFabColumn(
+        items: items,
+        onAddItem: _addItem,
+        onGenerate: _generateOutfit,
+        onOutfitCreated: _addOutfit,
       ),
     );
   }
