@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:wardrobe_ai/constants/wardrobe_constants.dart';
-import 'package:wardrobe_ai/widgets/add_item_dropdown.dart';
-import 'package:wardrobe_ai/widgets/selected_images_grid.dart';
+import 'package:wardrobe_ai/widgets/add_item/add_item_dropdown.dart';
+import 'package:wardrobe_ai/widgets/add_item/selected_images_grid.dart';
 
 class AddItemScreen extends StatefulWidget {
   const AddItemScreen({super.key});
