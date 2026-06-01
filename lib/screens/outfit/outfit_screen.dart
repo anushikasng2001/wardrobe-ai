@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wardrobe_ai/widgets/safe_image.dart';
+import 'package:wardrobe_ai/services/storage_service.dart';
+import 'package:wardrobe_ai/widgets/outfit/outfit_actions_sheet.dart' show showOutfitActionsSheet;
+import 'package:wardrobe_ai/widgets/outfit/outfit_grid.dart';
+import 'package:wardrobe_ai/widgets/outfit/rename_outfit_dialog.dart';
 
 import '../../models/outfit.dart';
 import 'outfit_detail_screen.dart';
@@ -16,45 +18,43 @@ class _OutfitScreenState extends State<OutfitScreen> {
   List<Outfit> outfits = [];
   bool showFavoritesOnly = false;
 
-  List<Outfit> get displayedOutfits {
-    if (showFavoritesOnly) {
-      return outfits.where((o) => o.isFavorite).toList();
-    }
-    return outfits;
-  }
+  List<Outfit> get displayedOutfits =>
+    showFavoritesOnly
+        ? outfits.where((o) => o.isFavorite).toList()
+        : outfits;
 
   @override
   void initState() {
     super.initState();
-    loadOutfits();
+    _loadOutfits();
   }
 
-  Future<void> loadOutfits() async {
-    final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getString('outfits');
+  Future<void> _loadOutfits() async {
+    final loadedOutfits =
+        await StorageService.loadOutfits();
 
-    if (data != null) {
-      setState(() {
-        outfits = Outfit.decode(data);
-      });
-    }
-  }
+    if (!mounted) return;
 
-  Future<void> saveOutfits() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('outfits', Outfit.encode(outfits));
-  }
-
-  void deleteOutfit(String id) {
     setState(() {
-      outfits.removeWhere((o) => o.id == id);
+      outfits = loadedOutfits;
+    });
+  }
+
+  Future<void> _saveOutfits() async {
+    await StorageService.saveOutfits(outfits);
+  }
+
+  Future<void> _deleteOutfit(Outfit outfit) async {
+    setState(() {
+      outfits.removeWhere((o) => o.id == outfit.id);
     });
 
-    saveOutfits();
+    await _saveOutfits();
   }
 
-  void toggleFavorite(String id) {
-    final index = outfits.indexWhere((o) => o.id == id);
+  Future<void> _toggleFavorite(Outfit outfit) async {
+    final index =
+        outfits.indexWhere((o) => o.id == outfit.id);
 
     if (index == -1) return;
 
@@ -64,81 +64,52 @@ class _OutfitScreenState extends State<OutfitScreen> {
       );
     });
 
-    saveOutfits();
+    await _saveOutfits();
   }
 
-  Widget buildOutfitPreview(List<String> images) {
-    final displayImages = images.take(4).toList();
+  void _toggleFavoritesFilter() {
+    setState(() {
+      showFavoritesOnly = !showFavoritesOnly;
+    });
+  }
 
-    if (displayImages.length == 1) {
-      return SafeImage(
-        path: displayImages.first,
-        fit: BoxFit.cover,
-        width: double.infinity,
-      );
+  void _openOutfit(Outfit outfit) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            OutfitDetailScreen(outfit: outfit),
+      ),
+    );
+  }
+
+  Future<void> _renameOutfit(Outfit outfit) async {
+    final newName = await showRenameOutfitDialog( context, outfit.name );
+
+    if (newName == null || newName.isEmpty) {
+      return;
     }
 
-    return GridView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.zero,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 2,
-        mainAxisSpacing: 2,
-      ),
-      itemCount: displayImages.length,
-      itemBuilder: (context, index) {
-        return SafeImage(
-          path: displayImages[index],
-          fit: BoxFit.cover,
-        );
-      },
-    );
-  }
+    final index =
+        outfits.indexWhere((o) => o.id == outfit.id);
 
-  Future<void> renameOutfit(String outfitId) async {
-    final outfitIndex = outfits.indexWhere((o) => o.id == outfitId);
-
-    if (outfitIndex == -1) return;
-
-    final controller = TextEditingController(
-      text: outfits[outfitIndex].name,
-    );
-
-    final newName = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Rename Outfit'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Outfit name',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () =>
-                Navigator.pop(context, controller.text.trim()),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-
-    if (newName == null || newName.isEmpty) return;
+    if (index == -1) return;
 
     setState(() {
-      outfits[outfitIndex] = outfits[outfitIndex].copyWith(
+      outfits[index] = outfits[index].copyWith(
         name: newName,
       );
     });
 
-    await saveOutfits();
+    await _saveOutfits();
+  }
+
+  void _showOutfitActions(Outfit outfit) {
+    showOutfitActionsSheet(
+      context: context,
+      onRename: () => _renameOutfit(outfit),
+      onDelete: () => _deleteOutfit(outfit),
+    );
   }
 
   @override
@@ -152,110 +123,26 @@ class _OutfitScreenState extends State<OutfitScreen> {
               showFavoritesOnly
                   ? Icons.favorite
                   : Icons.favorite_border,
+              color: showFavoritesOnly
+                  ? Colors.red
+                  : Colors.grey,
             ),
-            onPressed: () {
-              setState(() {
-                showFavoritesOnly = !showFavoritesOnly;
-              });
-            },
+            onPressed: _toggleFavoritesFilter,
           ),
         ],
       ),
-      body: outfits.isEmpty
-          ? const Center(
-              child: Text('No outfits created yet'),
-            )
-          : GridView.builder(
-              padding: const EdgeInsets.all(12),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-              ),
-              itemCount: displayedOutfits.length,
-              itemBuilder: (context, index) {
-                final outfit = displayedOutfits[index];
-
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            OutfitDetailScreen(outfit: outfit),
-                      ),
-                    );
-                  },
-                  onLongPress: () => showModalBottomSheet(
-                    context: context,
-                    builder: (_) => Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ListTile(
-                          leading: const Icon(Icons.edit),
-                          title: const Text('Rename'),
-                          onTap: () {
-                            Navigator.pop(context);
-                            renameOutfit(outfit.id);
-                          },
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.delete, color: Colors.red),
-                          title: const Text('Delete'),
-                          onTap: () {
-                            Navigator.pop(context);
-                            deleteOutfit(outfit.id);
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  child: Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: buildOutfitPreview(outfit.imagePaths),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  outfit.name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              IconButton(
-                                icon: Icon(
-                                  outfit.isFavorite
-                                      ? Icons.favorite
-                                      : Icons.favorite_border,
-                                  color: outfit.isFavorite
-                                      ? Colors.red
-                                      : Colors.grey,
-                                ),
-                                onPressed: () {
-                                  toggleFavorite(outfit.id);
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
+      body: displayedOutfits.isEmpty
+      ? const Center(
+          child: Text(
+            'No outfits created yet',
+          ),
+        )
+      : OutfitGrid(
+          outfits: displayedOutfits,
+          onTap: _openOutfit,
+          onLongPress: _showOutfitActions,
+          onFavorite: _toggleFavorite,
+        ),
     );
   }
 }
