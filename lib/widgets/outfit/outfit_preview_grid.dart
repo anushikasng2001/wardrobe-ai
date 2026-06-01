@@ -1,39 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:wardrobe_ai/widgets/outfit/outfit_image_tile.dart';
 
-class OutfitPreview extends StatelessWidget {
-  final List<String> images;
+class OutfitPreviewGrid extends StatelessWidget {
+  final List<String> imagePaths;
 
-  const OutfitPreview({
+  const OutfitPreviewGrid({
     super.key,
-    required this.images,
+    required this.imagePaths,
   });
 
   @override
   Widget build(BuildContext context) {
-    final displayImages = images.take(4).toList();
-
-    if (displayImages.length == 1) {
-      return OutfitImageTile(
-        imagePath: displayImages.first,
-      );
-    }
-
     return GridView.builder(
+      shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.zero,
-      itemCount: displayImages.length,
+      itemCount: imagePaths.length,
       gridDelegate:
           const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 2,
-        mainAxisSpacing: 2,
+        crossAxisSpacing: 24,
+        mainAxisSpacing: 24,
       ),
       itemBuilder: (_, index) {
         return OutfitImageTile(
-          imagePath: displayImages[index],
-          borderRadius: 0,
-          showShadow: false,
+          imagePath: imagePaths[index],
         );
       },
     );

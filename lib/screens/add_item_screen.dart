@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:wardrobe_ai/widgets/safe_image.dart';
+import 'package:wardrobe_ai/constants/wardrobe_constants.dart';
+import 'package:wardrobe_ai/widgets/add_item_dropdown.dart';
+import 'package:wardrobe_ai/widgets/selected_images_grid.dart';
 
 class AddItemScreen extends StatefulWidget {
   const AddItemScreen({super.key});
@@ -12,29 +14,12 @@ class AddItemScreen extends StatefulWidget {
 class _AddItemScreenState extends State<AddItemScreen> {
   final ImagePicker _picker = ImagePicker();
   List<XFile> selectedImages = [];
-  String selectedCategory = 'Top';
-  String selectedColor = 'Black';
 
-  final List<String> categories = [
-    'Top',
-    'Bottom',
-    'Dress',
-    'Shoes',
-    'Accessories',
-    'Jacket',
-  ];
+  String selectedCategory = WardrobeConstants.categories.first;
 
-  final List<String> colors = [
-    'Black',
-    'White',
-    'Blue',
-    'Red',
-    'Green',
-    'Beige',
-    'Grey',
-  ];
+  String selectedColor = WardrobeConstants.colors.first;
 
-  Future<void> pickImages() async {
+  Future<void> _pickImages() async {
     final images = await _picker.pickMultiImage();
 
     if (images.isNotEmpty) {
@@ -44,7 +29,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
     }
   }
 
-  void saveItems() {
+  void _saveItems() {
     if (selectedImages.isEmpty) return;
 
     Navigator.pop(context, {
@@ -63,69 +48,43 @@ class _AddItemScreenState extends State<AddItemScreen> {
         child: Column(
           children: [
             ElevatedButton.icon(
-              onPressed: pickImages,
+              onPressed: _pickImages,
               icon: const Icon(Icons.photo_library),
               label: const Text('Select Images'),
             ),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
+            AddItemDropdown(
+              label: 'Category',
               value: selectedCategory,
-              items: categories
-                  .map(
-                    (cat) => DropdownMenuItem(
-                      value: cat,
-                      child: Text(cat),
-                    ),
-                  )
-                  .toList(),
+              options: WardrobeConstants.categories,
               onChanged: (value) {
                 setState(() {
                   selectedCategory = value!;
                 });
               },
-              decoration: const InputDecoration(
-                labelText: 'Category',
-                border: OutlineInputBorder(),
-              ),
             ),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
+            AddItemDropdown(
+              label: 'Color',
               value: selectedColor,
-              items: colors
-                  .map(
-                    (color) => DropdownMenuItem(
-                      value: color,
-                      child: Text(color),
-                    ),
-                  )
-                  .toList(),
+              options: WardrobeConstants.colors,
               onChanged: (value) {
                 setState(() {
                   selectedColor = value!;
                 });
               },
-              decoration: const InputDecoration(
-                labelText: 'Color',
-                border: OutlineInputBorder(),
-              ),
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: GridView.builder(
-                itemCount: selectedImages.length,
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                ),
-                itemBuilder: (context, index) {
-                  return SafeImage(path: selectedImages[index].path,);
-                },
+              child: SelectedImagesGrid(
+                images: selectedImages,
               ),
             ),
             ElevatedButton(
-              onPressed: saveItems,
+              onPressed:
+                  selectedImages.isEmpty
+                      ? null
+                      : _saveItems,
               child: const Text('Save Items'),
             ),
           ],
