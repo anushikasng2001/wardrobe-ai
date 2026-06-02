@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wardrobe_ai/constants/grid_layouts.dart';
 
 import '../../models/wardrobe_item.dart';
 import 'wardrobe_item_tile.dart';
@@ -25,12 +26,7 @@ class WardrobeGrid extends StatelessWidget {
           : GridView.builder(
               padding: const EdgeInsets.all(12),
 
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-              ),
+              gridDelegate: GridLayouts.outfitGrid,
 
               itemCount: items.length,
 

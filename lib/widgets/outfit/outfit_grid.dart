@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wardrobe_ai/constants/grid_layouts.dart';
 import 'package:wardrobe_ai/models/outfit.dart';
 import 'package:wardrobe_ai/widgets/outfit/outfit_card.dart';
 
@@ -20,12 +21,7 @@ class OutfitGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return GridView.builder(
       padding: const EdgeInsets.all(12),
-      gridDelegate:
-          const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
+      gridDelegate: GridLayouts.outfitGrid,
       itemCount: outfits.length,
       itemBuilder: (_, index) {
         final outfit = outfits[index];

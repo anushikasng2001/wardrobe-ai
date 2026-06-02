@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wardrobe_ai/models/outfit.dart';
 
 import '../../models/wardrobe_item.dart';
-import '../../screens/create_outfit_screen.dart';
+import '../../screens/outfit/create_outfit_screen.dart';
 import 'generate_outfit_dialog.dart';
 
 class WardrobeFabColumn extends StatelessWidget {

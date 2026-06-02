@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:wardrobe_ai/models/outfit.dart';
+import 'package:wardrobe_ai/widgets/app_snackbar.dart';
 import 'package:wardrobe_ai/widgets/outfit/outfit_share_card.dart';
-import 'package:wardrobe_ai/services/outfit_share_service.dart';
-import 'package:wardrobe_ai/services/outfit_wear_service.dart';
+import 'package:wardrobe_ai/services/outfit/outfit_share_service.dart';
+import 'package:wardrobe_ai/services/outfit/outfit_wear_service.dart';
 
 class OutfitDetailScreen extends StatefulWidget {
   final Outfit outfit;
@@ -53,8 +54,9 @@ class _OutfitDetailScreenState
         break;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+    AppSnackBar.show(
+      context,
+      message,
     );
 
     setState(() {
@@ -70,10 +72,9 @@ class _OutfitDetailScreenState
 
     if (!mounted || success) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Failed to share outfit'),
-      ),
+    AppSnackBar.show(
+      context,
+      'Failed to share outfit',
     );
   }
 

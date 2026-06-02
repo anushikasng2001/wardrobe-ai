@@ -1,5 +1,5 @@
-import '../models/outfit.dart';
-import '../models/wardrobe_item.dart';
+import '../../models/outfit.dart';
+import '../../models/wardrobe_item.dart';
 
 class OutfitService {
   static bool deleteItem({

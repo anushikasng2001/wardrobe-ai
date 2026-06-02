@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wardrobe_ai/constants/app_colors.dart';
 import 'package:wardrobe_ai/models/wardrobe_item.dart';
 import 'package:wardrobe_ai/widgets/safe_image.dart';
 
@@ -45,7 +46,7 @@ class WardrobeItemTile extends StatelessWidget {
               Text(
                 item.color,
                 style: TextStyle(
-                  color: Colors.grey.shade600,
+                  color: AppColors.grey.shade600,
                   fontSize: 12,
                 ),
               ),
@@ -55,7 +56,7 @@ class WardrobeItemTile extends StatelessWidget {
               Text(
                 '${item.wearCount} wears',
                 style: TextStyle(
-                  color: Colors.grey.shade500,
+                  color: AppColors.grey.shade500,
                   fontSize: 11,
                 ),
               ),
@@ -66,7 +67,7 @@ class WardrobeItemTile extends StatelessWidget {
                   '${item.lastWorn!.day}/'
                   '${item.lastWorn!.month}',
                   style: TextStyle(
-                    color: Colors.grey.shade500,
+                    color: AppColors.grey.shade500,
                     fontSize: 10,
                   ),
                 ),

@@ -16,5 +16,6 @@ class WardrobeConstants {
     'Green',
     'Beige',
     'Grey',
+    'Brown'
   ];
 }

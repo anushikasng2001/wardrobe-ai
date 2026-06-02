@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wardrobe_ai/constants/storage_keys.dart';
 import 'package:wardrobe_ai/models/outfit.dart';
 import 'package:wardrobe_ai/models/wardrobe_item.dart';
 
@@ -16,8 +17,7 @@ class OutfitWearService {
       final prefs =
           await SharedPreferences.getInstance();
 
-      final data =
-          prefs.getString('wardrobe_items');
+      final data = prefs.getString(StorageKeys.wardrobeItems);
 
       if (data == null) {
         return OutfitWearResult.noItemsFound;
@@ -46,9 +46,9 @@ class OutfitWearService {
       if (!updated) {
         return OutfitWearResult.noItemsFound;
       }
-
+      
       await prefs.setString(
-        'wardrobe_items',
+        StorageKeys.wardrobeItems,
         WardrobeItem.encode(items),
       );
 

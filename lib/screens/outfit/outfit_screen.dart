@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wardrobe_ai/constants/app_colors.dart';
 import 'package:wardrobe_ai/services/storage_service.dart';
 import 'package:wardrobe_ai/widgets/outfit/outfit_actions_sheet.dart' show showOutfitActionsSheet;
 import 'package:wardrobe_ai/widgets/outfit/outfit_grid.dart';
@@ -124,8 +125,8 @@ class _OutfitScreenState extends State<OutfitScreen> {
                   ? Icons.favorite
                   : Icons.favorite_border,
               color: showFavoritesOnly
-                  ? Colors.red
-                  : Colors.grey,
+                  ? AppColors.favorite
+                  : AppColors.grey,
             ),
             onPressed: _toggleFavoritesFilter,
           ),

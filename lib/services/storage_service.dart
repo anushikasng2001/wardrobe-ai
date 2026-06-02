@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wardrobe_ai/constants/storage_keys.dart';
 
 import '../models/outfit.dart';
 import '../models/wardrobe_item.dart';
@@ -9,7 +10,7 @@ class StorageService {
 
     final prefs = await SharedPreferences.getInstance();
 
-    final data = prefs.getString('wardrobe_items');
+    final data = prefs.getString(StorageKeys.wardrobeItems);
 
     if (data == null) {
       return [];
@@ -22,7 +23,7 @@ class StorageService {
 
     final prefs = await SharedPreferences.getInstance();
 
-    final data = prefs.getString('outfits');
+    final data = prefs.getString(StorageKeys.outfits);
 
     if (data == null) {
       return [];
@@ -38,7 +39,7 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
 
     await prefs.setString(
-      'wardrobe_items',
+      StorageKeys.wardrobeItems,
       WardrobeItem.encode(items),
     );
   }
@@ -50,7 +51,7 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
 
     await prefs.setString(
-      'outfits',
+      StorageKeys.outfits,
       Outfit.encode(outfits),
     );
   }

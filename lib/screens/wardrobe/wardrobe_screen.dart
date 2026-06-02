@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:wardrobe_ai/screens/add_item_screen.dart';
+import 'package:wardrobe_ai/screens/wardrobe/add_item_screen.dart';
 import 'package:wardrobe_ai/screens/outfit/outfit_detail_screen.dart';
-import 'package:wardrobe_ai/services/wardrobe_service.dart';
+import 'package:wardrobe_ai/services/wardrobe/wardrobe_service.dart';
+import 'package:wardrobe_ai/widgets/app_snackbar.dart';
 import 'package:wardrobe_ai/widgets/wardrobe/category_filter_bar.dart';
 import 'package:wardrobe_ai/widgets/wardrobe/delete_item_sheet.dart';
 import 'package:wardrobe_ai/widgets/wardrobe/wardrobe_app_bar.dart';
@@ -12,9 +13,9 @@ import 'package:wardrobe_ai/widgets/wardrobe/wardrobe_search_bar.dart';
 import '../../models/outfit.dart';
 import '../../models/wardrobe_item.dart';
 
-import '../../services/outfit_service.dart';
+import '../../services/outfit/outfit_service.dart';
 import '../../services/storage_service.dart';
-import '../../services/outfit_generator_service.dart';
+import '../../services/outfit/outfit_generator_service.dart';
 
 import '../outfit/outfit_screen.dart';
 
@@ -112,12 +113,9 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
     await _saveData();
 
     if (removedOutfits) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Some outfits were removed because items were deleted.',
-          ),
-        ),
+      AppSnackBar.show(
+        context,
+        'Some outfits were removed because items were deleted.',
       );
     }
   }
@@ -134,10 +132,9 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
     );
 
     if (outfit == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Not enough wardrobe items'),
-        ),
+      AppSnackBar.show(
+        context,
+        'Not enough wardrobe items to generate an outfit',
       );
       return;
     }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wardrobe_ai/constants/app_colors.dart';
 import 'package:wardrobe_ai/models/outfit.dart';
 import 'package:wardrobe_ai/widgets/outfit/outfit_preview.dart';
 
@@ -56,8 +57,8 @@ class OutfitCard extends StatelessWidget {
                           ? Icons.favorite
                           : Icons.favorite_border,
                       color: outfit.isFavorite
-                          ? Colors.red
-                          : Colors.grey,
+                          ? AppColors.favorite
+                          : AppColors.grey,
                     ),
                     onPressed: onFavorite,
                   ),

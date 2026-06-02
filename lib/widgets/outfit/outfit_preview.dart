@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wardrobe_ai/constants/grid_layouts.dart';
 import 'package:wardrobe_ai/widgets/outfit/outfit_image_tile.dart';
 
 class OutfitPreview extends StatelessWidget {
@@ -23,12 +24,7 @@ class OutfitPreview extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.zero,
       itemCount: displayImages.length,
-      gridDelegate:
-          const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 2,
-        mainAxisSpacing: 2,
-      ),
+      gridDelegate: GridLayouts.outfitCardPreview,
       itemBuilder: (_, index) {
         return OutfitImageTile(
           imagePath: displayImages[index],

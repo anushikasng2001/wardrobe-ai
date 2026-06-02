@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wardrobe_ai/constants/app_colors.dart';
 import 'package:wardrobe_ai/widgets/safe_image.dart';
 
 class OutfitImageTile extends StatelessWidget {
@@ -21,7 +22,7 @@ class OutfitImageTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: AppColors.shadowBlack,
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),

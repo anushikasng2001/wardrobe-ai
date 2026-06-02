@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:wardrobe_ai/constants/app_colors.dart';
 
 class SafeImage extends StatelessWidget {
   final String path;
@@ -24,20 +25,20 @@ class SafeImage extends StatelessWidget {
       return Container(
         width: width,
         height: height,
-        color: Colors.grey.shade200,
+        color: AppColors.grey.shade200,
         child: const Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.broken_image,
-              color: Colors.grey,
+              color: AppColors.grey,
             ),
             SizedBox(height: 4),
             Text(
               'Image missing',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey,
+                color: AppColors.grey,
               ),
             ),
           ],
@@ -52,10 +53,10 @@ class SafeImage extends StatelessWidget {
       height: height,
       errorBuilder: (_, __, ___) {
         return Container(
-          color: Colors.grey.shade200,
+          color: AppColors.grey.shade200,
           child: const Icon(
             Icons.broken_image,
-            color: Colors.grey,
+            color: AppColors.grey,
           ),
         );
       },

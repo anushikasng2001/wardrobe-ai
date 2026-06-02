@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wardrobe_ai/constants/app_colors.dart';
 
 void showDeleteItemSheet({
   required BuildContext context,
@@ -17,7 +18,7 @@ void showDeleteItemSheet({
             ListTile(
               leading: const Icon(
                 Icons.delete,
-                color: Colors.red,
+                color: AppColors.favorite,
               ),
 
               title: const Text(

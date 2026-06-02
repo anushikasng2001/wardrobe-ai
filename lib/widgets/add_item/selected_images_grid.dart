@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:wardrobe_ai/constants/grid_layouts.dart';
 import 'package:wardrobe_ai/widgets/safe_image.dart';
 
 class SelectedImagesGrid extends StatelessWidget {
@@ -14,12 +15,7 @@ class SelectedImagesGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return GridView.builder(
       itemCount: images.length,
-      gridDelegate:
-          const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-      ),
+      gridDelegate: GridLayouts.wardrobeSelection,
       itemBuilder: (context, index) {
         return SafeImage(
           path: images[index].path,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:wardrobe_ai/widgets/safe_image.dart';
-import '../models/wardrobe_item.dart';
+import 'package:wardrobe_ai/constants/grid_layouts.dart';
+import 'package:wardrobe_ai/widgets/app_snackbar.dart';
+import 'package:wardrobe_ai/widgets/outfit/outfit_selection_tile.dart';
+import '../../models/wardrobe_item.dart';
 
 class CreateOutfitScreen extends StatefulWidget {
   final List<WardrobeItem> items;
@@ -15,12 +17,17 @@ class _CreateOutfitScreenState extends State<CreateOutfitScreen> {
   final Set<WardrobeItem> selectedItems = {};
   final TextEditingController nameController = TextEditingController();
 
-  void saveOutfit() {
+  @override
+  void dispose() {
+    nameController.dispose();
+    super.dispose();
+  }
+
+  void _saveOutfit() {
     if (nameController.text.isEmpty || selectedItems.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter outfit name and select items'),
-        ),
+      AppSnackBar.show(
+        context,
+        'Please enter outfit name and select items',
       );
       return;
     }
@@ -42,6 +49,7 @@ class _CreateOutfitScreenState extends State<CreateOutfitScreen> {
             padding: const EdgeInsets.all(12),
             child: TextField(
               controller: nameController,
+              onChanged: (_) => setState(() {}),
               decoration: const InputDecoration(
                 labelText: 'Outfit Name',
                 border: OutlineInputBorder(),
@@ -52,46 +60,33 @@ class _CreateOutfitScreenState extends State<CreateOutfitScreen> {
             child: GridView.builder(
               padding: const EdgeInsets.all(12),
               itemCount: widget.items.length,
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-              ),
+              gridDelegate: GridLayouts.wardrobeSelection,
               itemBuilder: (context, index) {
                 final item = widget.items[index];
                 final isSelected = selectedItems.contains(item);
 
-                return GestureDetector(
+                return OutfitSelectionTile(
+                  item: item,
+                  isSelected: isSelected,
                   onTap: () {
                     setState(() {
-                      isSelected
-                          ? selectedItems.remove(item)
-                          : selectedItems.add(item);
+                      if (isSelected) {
+                        selectedItems.remove(item);
+                      } else {
+                        selectedItems.add(item);
+                      }
                     });
                   },
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: SafeImage(path: item.imagePath),
-                      ),
-                      if (isSelected)
-                        const Positioned(
-                          top: 4,
-                          right: 4,
-                          child: Icon(
-                            Icons.check_circle,
-                            color: Colors.green,
-                          ),
-                        ),
-                    ],
-                  ),
                 );
               },
             ),
           ),
           ElevatedButton(
-            onPressed: saveOutfit,
+            onPressed:
+                selectedItems.isEmpty ||
+                        nameController.text.trim().isEmpty
+                    ? null
+                    : _saveOutfit,
             child: const Text('Save Outfit'),
           ),
         ],
