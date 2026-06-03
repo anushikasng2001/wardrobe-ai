@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:wardrobe_ai/constants/app_colors.dart';
 import 'package:wardrobe_ai/models/outfit.dart';
+import 'package:wardrobe_ai/models/wardrobe_item.dart';
+import 'package:wardrobe_ai/screens/outfit/edit_outfit_screen.dart';
 import 'package:wardrobe_ai/widgets/app_snackbar.dart';
+import 'package:wardrobe_ai/widgets/outfit/outfit_rating_bar.dart';
 import 'package:wardrobe_ai/widgets/outfit/outfit_share_card.dart';
 import 'package:wardrobe_ai/services/outfit/outfit_share_service.dart';
 import 'package:wardrobe_ai/services/outfit/outfit_wear_service.dart';
 
 class OutfitDetailScreen extends StatefulWidget {
   final Outfit outfit;
+  final Future<void> Function(Outfit)? onSave;
+  final List<WardrobeItem> wardrobeItems;
 
   const OutfitDetailScreen({
     super.key,
     required this.outfit,
+    this.onSave,
+    this.wardrobeItems = const [],
   });
 
   @override
@@ -21,8 +29,16 @@ class OutfitDetailScreen extends StatefulWidget {
 class _OutfitDetailScreenState
     extends State<OutfitDetailScreen> {
   final GlobalKey repaintKey = GlobalKey();
+  late Outfit _outfit;
+  bool _isSaved = false;
 
   bool isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _outfit = widget.outfit;
+  }
 
   Future<void> _markAsWorn() async {
     if (isSaving) return;
@@ -32,9 +48,7 @@ class _OutfitDetailScreenState
     });
 
     final result =
-        await OutfitWearService.markOutfitAsWorn(
-      widget.outfit,
-    );
+        await OutfitWearService.markOutfitAsWorn(_outfit);
 
     if (!mounted) return;
 
@@ -78,12 +92,76 @@ class _OutfitDetailScreenState
     );
   }
 
+  Future<void> _editOutfit() async {
+
+    final edited =
+        await Navigator.push<Outfit>(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            EditOutfitScreen(
+          outfit: _outfit,
+          wardrobeItems: widget.wardrobeItems,
+        ),
+      ),
+    );
+
+    if (edited == null) return;
+
+    setState(() {
+      _outfit = edited;
+      _isSaved = false;
+    });
+  }
+
+  void _updateRating(double rating) {
+    setState(() {
+      _outfit = _outfit.copyWith(
+        rating: rating,
+      );
+
+      _isSaved = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.outfit.name),
+        title: Text(_outfit.name),
         actions: [
+
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: _editOutfit,
+          ),
+
+          if (widget.onSave != null)
+            IconButton(
+              icon: Icon(
+                _isSaved
+                    ? Icons.bookmark
+                    : Icons.bookmark_add,
+                color: _isSaved ? AppColors.selected : null,
+              ),
+              onPressed: _isSaved
+              ? null
+              : () async {
+                  await widget.onSave!(_outfit);
+
+                  if (!mounted) return;
+
+                  setState(() {
+                    _isSaved = true;
+                  });
+
+                  AppSnackBar.show(
+                    context,
+                    'Outfit saved',
+                  );
+                },
+            ),
+
           IconButton(
             icon: const Icon(Icons.share),
             onPressed: _shareOutfit,
@@ -111,10 +189,28 @@ class _OutfitDetailScreenState
               : 'Worn Today',
         ),
       ),
-      body: Center(
-        child: OutfitShareCard(
-          outfit: widget.outfit,
-          repaintKey: repaintKey,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            OutfitShareCard(
+              outfit: _outfit,
+              repaintKey: repaintKey,
+            ),
+
+            const SizedBox(height: 16),
+
+            const Text(
+              'Rate this Outfit',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            OutfitRatingBar(
+              rating: _outfit.rating,
+              onRatingChanged: _updateRating,
+            ),
+          ],
         ),
       ),
     );

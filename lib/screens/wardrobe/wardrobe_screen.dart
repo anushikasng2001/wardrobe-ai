@@ -190,6 +190,8 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
       MaterialPageRoute(
         builder: (_) => OutfitDetailScreen(
           outfit: outfit,
+          onSave: _addOutfit,
+          wardrobeItems: _items,
         ),
       ),
     );
