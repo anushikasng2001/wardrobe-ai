@@ -15,7 +15,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   final ImagePicker _picker = ImagePicker();
   List<XFile> selectedImages = [];
 
-  String selectedCategory = WardrobeConstants.categories.first;
+  String selectedCategory = WardrobeConstants.itemCategories.first;
 
   String selectedColor = WardrobeConstants.colors.first;
 
@@ -56,7 +56,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
             AddItemDropdown(
               label: 'Category',
               value: selectedCategory,
-              options: WardrobeConstants.categories,
+              options: WardrobeConstants.itemCategories,
               onChanged: (value) {
                 setState(() {
                   selectedCategory = value!;

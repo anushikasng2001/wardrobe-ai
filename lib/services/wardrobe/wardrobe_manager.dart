@@ -97,4 +97,20 @@ class WardrobeManager {
       );
     }
   }
+
+  static bool toggleFavorite({
+    required List<WardrobeItem> items,
+    required WardrobeItem item,
+  }) {
+    final index =
+        items.indexWhere((i) => i.id == item.id);
+
+    if (index == -1) return false;
+
+    items[index] = items[index].copyWith(
+      isFavorite: !items[index].isFavorite,
+    );
+
+    return true;
+  }
 }

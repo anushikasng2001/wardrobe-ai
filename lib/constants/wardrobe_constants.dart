@@ -1,5 +1,7 @@
 class WardrobeConstants {
-  static const categories = [
+
+  static const List<String> filterCategories = [
+    'All',
     'Top',
     'Bottom',
     'Dress',
@@ -8,7 +10,16 @@ class WardrobeConstants {
     'Jacket',
   ];
 
-  static const colors = [
+  static const List<String> itemCategories = [
+    'Top',
+    'Bottom',
+    'Dress',
+    'Shoes',
+    'Accessories',
+    'Jacket',
+  ];
+
+  static const List<String> colors = [
     'Black',
     'White',
     'Blue',
@@ -16,6 +27,6 @@ class WardrobeConstants {
     'Green',
     'Beige',
     'Grey',
-    'Brown'
+    'Brown',
   ];
 }

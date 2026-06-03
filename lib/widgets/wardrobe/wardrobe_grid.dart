@@ -7,11 +7,13 @@ import 'wardrobe_item_tile.dart';
 class WardrobeGrid extends StatelessWidget {
   final List<WardrobeItem> items;
   final void Function(WardrobeItem item) onItemLongPress;
+  final Function(WardrobeItem) onFavoriteToggle;
 
   const WardrobeGrid({
     super.key,
     required this.items,
     required this.onItemLongPress,
+    required this.onFavoriteToggle,
   });
 
   @override
@@ -36,6 +38,7 @@ class WardrobeGrid extends StatelessWidget {
                 return WardrobeItemTile(
                   item: item,
                   onLongPress: () => onItemLongPress(item),
+                  onFavoriteToggle: () => onFavoriteToggle(item),
                 );
               },
             ),

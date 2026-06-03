@@ -16,6 +16,7 @@ class AppColors {
 
   static const black26 = Colors.black26;
   static const grey = Colors.grey;
+  static const white = Colors.white;
 
   static const shadowBlack =
       Color.fromRGBO(0, 0, 0, 0.08);

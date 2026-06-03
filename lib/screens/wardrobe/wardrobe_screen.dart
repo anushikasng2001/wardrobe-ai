@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wardrobe_ai/constants/wardrobe_constants.dart';
 import 'package:wardrobe_ai/screens/outfit/outfit_detail_screen.dart';
 import 'package:wardrobe_ai/screens/wardrobe/add_item_screen.dart';
 import 'package:wardrobe_ai/services/wardrobe/wardrobe_manager.dart';
@@ -31,6 +32,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
 
   List<WardrobeItem> _items = [];
   List<Outfit> _outfits = [];
+  bool _showFavoritesOnly = false;
 
   String _selectedCategory = 'All';
   String _searchQuery = '';
@@ -42,9 +44,8 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
       selectedCategory: _selectedCategory,
       searchQuery: _searchQuery,
       sortOption: _sortOption,
+      showFavoritesOnly: _showFavoritesOnly,
     );
-
-
 
   @override
   void initState() {
@@ -220,17 +221,41 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
     );
   }
 
+  Future<void> _toggleFavorite(
+    WardrobeItem item,
+  ) async {
+    final updated =
+        WardrobeManager.toggleFavorite(
+      items: _items,
+      item: item,
+    );
+
+    if (!updated) return;
+
+    setState(() {});
+
+    await _saveData();
+  }
+
+  void _toggleFavoritesFilter() {
+    setState(() {
+      _showFavoritesOnly = !_showFavoritesOnly;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: WardrobeAppBar(
         onOpenOutfits: _openOutfits,
         onSortChanged: _changeSortOption,
+        showFavoritesOnly: _showFavoritesOnly,
+        onToggleFavorites: _toggleFavoritesFilter,
       ),
       body: Column(
         children: [
           CategoryFilterBar(
-            categories: WardrobeService.categories,
+            categories: WardrobeConstants.filterCategories,
             selectedCategory: _selectedCategory,
             onCategorySelected: _changeCategory,
           ),
@@ -240,6 +265,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
           WardrobeGrid(
             items: _filteredItems,
             onItemLongPress: _showItemActions,
+            onFavoriteToggle: _toggleFavorite,
           ),
         ],
       ),

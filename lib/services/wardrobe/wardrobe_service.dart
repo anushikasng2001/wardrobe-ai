@@ -2,24 +2,21 @@ import 'package:wardrobe_ai/models/wardrobe_item.dart';
 
 class WardrobeService {
 
-  static const List<String> categories = [
-    'All',
-    'Top',
-    'Bottom',
-    'Dress',
-    'Shoes',
-    'Accessories',
-    'Jacket',
-  ];
-
   static List<WardrobeItem> getFilteredItems({
     required List<WardrobeItem> items,
     required String selectedCategory,
     required String searchQuery,
     required String sortOption,
+    required bool showFavoritesOnly,
   }) {
 
     List<WardrobeItem> filtered = List.from(items);
+
+    if (showFavoritesOnly) {
+      filtered = filtered
+          .where((item) => item.isFavorite)
+          .toList();
+    }
 
     final query = searchQuery.toLowerCase();
 

@@ -21,7 +21,7 @@ Future<Map<String, String>?> showEditItemDialog({
               children: [
                 DropdownButtonFormField(
                   value: selectedCategory,
-                  items: WardrobeConstants.categories
+                  items: WardrobeConstants.itemCategories
                       .map(
                         (e) => DropdownMenuItem(
                           value: e,
