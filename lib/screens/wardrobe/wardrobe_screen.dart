@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:wardrobe_ai/screens/wardrobe/add_item_screen.dart';
 import 'package:wardrobe_ai/screens/outfit/outfit_detail_screen.dart';
+import 'package:wardrobe_ai/screens/wardrobe/add_item_screen.dart';
+import 'package:wardrobe_ai/services/wardrobe/wardrobe_manager.dart';
 import 'package:wardrobe_ai/services/wardrobe/wardrobe_service.dart';
 import 'package:wardrobe_ai/widgets/app_snackbar.dart';
 import 'package:wardrobe_ai/widgets/wardrobe/category_filter_bar.dart';
-import 'package:wardrobe_ai/widgets/wardrobe/delete_item_sheet.dart';
+import 'package:wardrobe_ai/widgets/wardrobe/edit_item_dialog.dart';
 import 'package:wardrobe_ai/widgets/wardrobe/wardrobe_app_bar.dart';
 import 'package:wardrobe_ai/widgets/wardrobe/wardrobe_fab_column.dart';
 import 'package:wardrobe_ai/widgets/wardrobe/wardrobe_grid.dart';
 import 'package:wardrobe_ai/widgets/wardrobe/wardrobe_search_bar.dart';
+import 'package:wardrobe_ai/widgets/wardrobe/wardrobe_actions_sheet.dart';
 
 import '../../models/outfit.dart';
 import '../../models/wardrobe_item.dart';
 
-import '../../services/outfit/outfit_service.dart';
-import '../../services/storage_service.dart';
 import '../../services/outfit/outfit_generator_service.dart';
 
 import '../outfit/outfit_screen.dart';
@@ -29,19 +29,19 @@ class WardrobeScreen extends StatefulWidget {
 
 class _WardrobeScreenState extends State<WardrobeScreen> {
 
-  List<WardrobeItem> items = [];
-  List<Outfit> outfits = [];
+  List<WardrobeItem> _items = [];
+  List<Outfit> _outfits = [];
 
-  String selectedCategory = 'All';
-  String searchQuery = '';
-  String sortOption = 'Recent';
+  String _selectedCategory = 'All';
+  String _searchQuery = '';
+  String _sortOption = 'Recent';
 
-  List<WardrobeItem> get filteredItems =>
+  List<WardrobeItem> get _filteredItems =>
     WardrobeService.getFilteredItems(
-      items: items,
-      selectedCategory: selectedCategory,
-      searchQuery: searchQuery,
-      sortOption: sortOption,
+      items: _items,
+      selectedCategory: _selectedCategory,
+      searchQuery: _searchQuery,
+      sortOption: _sortOption,
     );
 
 
@@ -53,20 +53,33 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
   }
 
   Future<void> _loadData() async {
-    final loadedItems = await StorageService.loadItems();
-    final loadedOutfits = await StorageService.loadOutfits();
+    final data =
+        await WardrobeManager.loadData();
 
     if (!mounted) return;
 
     setState(() {
-      items = loadedItems;
-      outfits = loadedOutfits;
+      _items = data.items;
+      _outfits = data.outfits;
     });
   }
 
-  Future<void> _saveData() async {
-    await StorageService.saveItems(items);
-    await StorageService.saveOutfits(outfits);
+  Future<void> _saveData() {
+    return WardrobeManager.saveData(
+      items: _items,
+      outfits: _outfits,
+    );
+  }
+
+  Future<void> _addOutfit(Outfit outfit) async {
+    setState(() {
+      WardrobeManager.addOutfit(
+        outfits: _outfits,
+        outfit: outfit,
+      );
+    });
+
+    await _saveData();
   }
 
   Future<void> _addItem() async {
@@ -79,33 +92,34 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
 
     if (result == null) return;
 
-    final imagePaths = List<String>.from(result['imagePaths']);
+    final imagePaths =
+        List<String>.from(result['imagePaths']);
+
     final category = result['category'];
-    final color = result['color'];
+    final color = result['color'];  
+
+    if (category == null || color == null) return;
 
     setState(() {
-      for (final path in imagePaths) {
-        items.add(
-          WardrobeItem(
-            id: DateTime.now().microsecondsSinceEpoch.toString(),
-            imagePath: path,
-            category: category,
-            color: color,
-            tags: [],
-            createdAt: DateTime.now(),
-          ),
-        );
-      }
+      WardrobeManager.addItems(
+        items: _items,
+        imagePaths: imagePaths,
+        category: category,
+        color: color,
+      );
     });
 
     await _saveData();
   }
 
-  Future<void> _deleteItem(WardrobeItem item) async {
-    final removedOutfits = OutfitService.deleteItem(
+  Future<void> _deleteItem(
+    WardrobeItem item,
+  ) async {
+    final removedOutfits =
+        WardrobeManager.deleteItem(
       item: item,
-      items: items,
-      outfits: outfits,
+      items: _items,
+      outfits: _outfits,
     );
 
     setState(() {});
@@ -120,13 +134,44 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
     }
   }
 
+  Future<void> _editItem(
+    WardrobeItem item,
+  ) async {
+    final result =
+        await showEditItemDialog(
+      context: context,
+      category: item.category,
+      color: item.color,
+    );
+
+    if (result == null) return;
+
+    final category = result['category'];
+    final color = result['color'];
+
+    if (category == null || color == null) return;
+
+    final updated = WardrobeManager.updateItem(
+      items: _items,
+      item: item,
+      category: category,
+      color: color,
+    );
+
+    if (!updated) return;
+
+    setState(() {});
+
+    await _saveData();
+  }
+
   void _generateOutfit(
     String occasion,
     String weather,
   ) {
     final outfit =
         OutfitGeneratorService.generateOutfit(
-      items: items,
+      items: _items,
       occasion: occasion,
       weather: weather,
     );
@@ -149,31 +194,14 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
     );
   }
 
-  void _changeSortOption(String value) {
-    setState(() {
-      sortOption = value;
-    });
-  }
+  void _changeSortOption(String value) =>
+      setState(() => _sortOption = value);
 
-  void _changeCategory(String category) {
-    setState(() {
-      selectedCategory = category;
-    });
-  }
+  void _changeCategory(String category) =>
+      setState(() => _selectedCategory = category);
 
-  void _changeSearchQuery(String value) {
-    setState(() {
-      searchQuery = value;
-    });
-  }
-
-  Future<void> _addOutfit(Outfit outfit) async {
-    setState(() {
-      outfits.add(outfit);
-    });
-
-    await _saveData();
-  }
+  void _changeSearchQuery(String value) =>
+      setState(() => _searchQuery = value);
 
   Future<void> _openOutfits() async {
     await Navigator.push(
@@ -184,9 +212,10 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
     );
   }
 
-  void _showDeleteItem(WardrobeItem item) {
-    showDeleteItemSheet(
+  void _showItemActions(WardrobeItem item) {
+    showWardrobeActionsSheet(
       context: context,
+      onEdit: () => _editItem(item),
       onDelete: () => _deleteItem(item),
     );
   }
@@ -202,20 +231,20 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
         children: [
           CategoryFilterBar(
             categories: WardrobeService.categories,
-            selectedCategory: selectedCategory,
+            selectedCategory: _selectedCategory,
             onCategorySelected: _changeCategory,
           ),
           WardrobeSearchBar(
             onChanged: _changeSearchQuery,
           ),
           WardrobeGrid(
-            items: filteredItems,
-            onItemLongPress: _showDeleteItem,
+            items: _filteredItems,
+            onItemLongPress: _showItemActions,
           ),
         ],
       ),
       floatingActionButton: WardrobeFabColumn(
-        items: items,
+        items: _items,
         onAddItem: _addItem,
         onGenerate: _generateOutfit,
         onOutfitCreated: _addOutfit,

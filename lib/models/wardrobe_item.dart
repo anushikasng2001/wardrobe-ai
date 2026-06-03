@@ -52,9 +52,9 @@ class WardrobeItem {
 
   factory WardrobeItem.fromJson(Map<String, dynamic> json) {
     return WardrobeItem(
-      id: json['id'] ?? DateTime.now().toString(),
-      imagePath: json['imagePath'],
-      category: json['category'],
+      id: json['id'] as String,
+      imagePath: json['imagePath'] as String,
+      category: json['category'] as String,
       color: json['color'] ?? 'Black',
       tags: List<String>.from(json['tags'] ?? []),
       wearCount: json['wearCount'] ?? 0,
@@ -71,6 +71,14 @@ class WardrobeItem {
       notes: json['notes'] ?? '',
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WardrobeItem && other.id == id;
+
+  @override
+  int get hashCode => id.hashCode;
 
   static String encode(List<WardrobeItem> items) {
     return jsonEncode(items.map((e) => e.toJson()).toList());
