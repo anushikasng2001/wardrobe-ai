@@ -8,6 +8,7 @@ class WardrobeAppBar extends StatelessWidget
   final VoidCallback onOpenOutfits;
   final bool showFavoritesOnly;
   final VoidCallback onToggleFavorites;
+  final VoidCallback onOpenStats;
 
   const WardrobeAppBar({
     super.key,
@@ -15,6 +16,7 @@ class WardrobeAppBar extends StatelessWidget
     required this.onOpenOutfits,
     required this.showFavoritesOnly,
     required this.onToggleFavorites, 
+    required this.onOpenStats,
   });
 
   @override
@@ -34,6 +36,11 @@ class WardrobeAppBar extends StatelessWidget
                   : AppColors.grey,
           ),
           onPressed: onToggleFavorites,
+        ),
+
+        IconButton(
+          icon: const Icon(Icons.bar_chart),
+          onPressed: onOpenStats,
         ),
 
         IconButton(

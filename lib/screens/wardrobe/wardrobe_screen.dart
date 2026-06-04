@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wardrobe_ai/constants/wardrobe_constants.dart';
 import 'package:wardrobe_ai/screens/outfit/outfit_detail_screen.dart';
+import 'package:wardrobe_ai/screens/stats/stats_screen.dart';
 import 'package:wardrobe_ai/screens/wardrobe/add_item_screen.dart';
 import 'package:wardrobe_ai/services/wardrobe/wardrobe_manager.dart';
 import 'package:wardrobe_ai/services/wardrobe/wardrobe_service.dart';
@@ -245,6 +246,17 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
     });
   }
 
+  Future<void> _openStats() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StatsScreen(
+          items: _items,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -253,6 +265,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
         onSortChanged: _changeSortOption,
         showFavoritesOnly: _showFavoritesOnly,
         onToggleFavorites: _toggleFavoritesFilter,
+        onOpenStats: _openStats,
       ),
       body: Column(
         children: [
