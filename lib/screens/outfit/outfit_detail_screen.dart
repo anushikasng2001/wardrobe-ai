@@ -3,6 +3,7 @@ import 'package:wardrobe_ai/constants/app_colors.dart';
 import 'package:wardrobe_ai/models/outfit.dart';
 import 'package:wardrobe_ai/models/wardrobe_item.dart';
 import 'package:wardrobe_ai/screens/outfit/edit_outfit_screen.dart';
+import 'package:wardrobe_ai/services/history/outfit_history_service.dart';
 import 'package:wardrobe_ai/widgets/app_snackbar.dart';
 import 'package:wardrobe_ai/widgets/outfit/outfit_rating_bar.dart';
 import 'package:wardrobe_ai/widgets/outfit/outfit_share_card.dart';
@@ -13,11 +14,13 @@ class OutfitDetailScreen extends StatefulWidget {
   final Outfit outfit;
   final Future<void> Function(Outfit)? onSave;
   final List<WardrobeItem> wardrobeItems;
+  final Future<void> Function(Outfit)? onWorn;
 
   const OutfitDetailScreen({
     super.key,
     required this.outfit,
     this.onSave,
+    this.onWorn,
     this.wardrobeItems = const [],
   });
 
@@ -57,6 +60,9 @@ class _OutfitDetailScreenState
     switch (result) {
       case OutfitWearResult.success:
         message = 'Outfit marked as worn';
+        if (widget.onWorn != null) {
+          await widget.onWorn!(_outfit);
+        }
         break;
 
       case OutfitWearResult.noItemsFound:

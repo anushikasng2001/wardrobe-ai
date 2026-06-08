@@ -1,15 +1,18 @@
 import 'package:wardrobe_ai/models/outfit.dart';
 import 'package:wardrobe_ai/models/wardrobe_item.dart';
+import 'package:wardrobe_ai/models/outfit_history.dart';
 import 'package:wardrobe_ai/services/outfit/outfit_service.dart';
 import 'package:wardrobe_ai/services/storage_service.dart';
 
 class WardrobeData {
   final List<WardrobeItem> items;
   final List<Outfit> outfits;
+  final List<OutfitHistory> history;
 
   const WardrobeData({
     required this.items,
     required this.outfits,
+    required this.history,
   });
 }
 
@@ -24,9 +27,13 @@ class WardrobeManager {
     final outfits =
         await StorageService.loadOutfits();
 
+    final history =
+        await StorageService.loadHistory();
+
     return WardrobeData(
       items: items,
       outfits: outfits,
+      history: history,
     );
   }
 

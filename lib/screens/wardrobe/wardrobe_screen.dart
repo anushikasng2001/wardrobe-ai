@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:wardrobe_ai/constants/wardrobe_constants.dart';
+import 'package:wardrobe_ai/models/outfit_history.dart';
+import 'package:wardrobe_ai/screens/history/outfit_history_screen.dart';
 import 'package:wardrobe_ai/screens/outfit/outfit_detail_screen.dart';
 import 'package:wardrobe_ai/screens/stats/stats_screen.dart';
 import 'package:wardrobe_ai/screens/wardrobe/add_item_screen.dart';
+import 'package:wardrobe_ai/services/history/outfit_history_service.dart';
+import 'package:wardrobe_ai/services/storage_service.dart';
 import 'package:wardrobe_ai/services/wardrobe/wardrobe_manager.dart';
 import 'package:wardrobe_ai/services/wardrobe/wardrobe_service.dart';
+import 'package:wardrobe_ai/services/history/outfit_history_service.dart';
 import 'package:wardrobe_ai/widgets/app_snackbar.dart';
 import 'package:wardrobe_ai/widgets/wardrobe/category_filter_bar.dart';
 import 'package:wardrobe_ai/widgets/wardrobe/edit_item_dialog.dart';
@@ -33,6 +38,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
 
   List<WardrobeItem> _items = [];
   List<Outfit> _outfits = [];
+  List<OutfitHistory> _history = [];
   bool _showFavoritesOnly = false;
 
   String _selectedCategory = 'All';
@@ -63,6 +69,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
     setState(() {
       _items = data.items;
       _outfits = data.outfits;
+      _history = data.history;
     });
   }
 
@@ -192,6 +199,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
         builder: (_) => OutfitDetailScreen(
           outfit: outfit,
           onSave: _addOutfit,
+          onWorn: _recordOutfitHistory,
           wardrobeItems: _items,
         ),
       ),
@@ -257,6 +265,31 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
     );
   }
 
+  Future<void> _recordOutfitHistory(
+    Outfit outfit,
+  ) async {
+
+    OutfitHistoryService.addHistoryEntry(
+      history: _history,
+      outfit: outfit,
+    );
+
+    await StorageService.saveHistory(
+      _history,
+    );
+  }
+
+  Future<void> _openHistory() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OutfitHistoryScreen(
+          history: _history,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -266,6 +299,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
         showFavoritesOnly: _showFavoritesOnly,
         onToggleFavorites: _toggleFavoritesFilter,
         onOpenStats: _openStats,
+        onOpenHistory: _openHistory,
       ),
       body: Column(
         children: [
