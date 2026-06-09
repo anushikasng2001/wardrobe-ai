@@ -20,6 +20,7 @@ class AppColors {
 
   static const orange = Colors.orange;
   static const amber = Colors.amber;
+  static const blue = Colors.blue;
 
   static const shadowBlack =
       Color.fromRGBO(0, 0, 0, 0.08);

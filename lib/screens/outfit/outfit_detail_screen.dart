@@ -61,9 +61,19 @@ class _OutfitDetailScreenState
     switch (result) {
       case OutfitWearResult.success:
         message = 'Outfit marked as worn';
+
+        final wornOutfit = _outfit.copyWith(
+          wearCount: _outfit.wearCount + 1,
+        );
+
+        setState(() {
+          _outfit = wornOutfit;
+        });
+
         if (widget.onWorn != null) {
-          await widget.onWorn!(_outfit);
+          await widget.onWorn!(wornOutfit);
         }
+
         break;
 
       case OutfitWearResult.noItemsFound:

@@ -269,14 +269,20 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
     Outfit outfit,
   ) async {
 
+    final index =
+        _outfits.indexWhere((o) => o.id == outfit.id);
+
+    if (index != -1) {
+      _outfits[index] = outfit;
+      await _saveData();
+    }
+
     OutfitHistoryService.addHistoryEntry(
       history: _history,
       outfit: outfit,
     );
 
-    await StorageService.saveHistory(
-      _history,
-    );
+    await StorageService.saveHistory(_history);
   }
 
   Future<void> _openHistory() async {

@@ -82,7 +82,6 @@ class _OutfitScreenState extends State<OutfitScreen> {
           outfit: outfit,
 
           onUpdate: (updatedOutfit) async {
-
             final index = outfits.indexWhere(
               (o) => o.id == updatedOutfit.id,
             );
@@ -94,6 +93,21 @@ class _OutfitScreenState extends State<OutfitScreen> {
             });
 
             await _saveOutfits();
+          },
+
+          onWorn: (updatedOutfit) async {
+            final index = outfits.indexWhere(
+              (o) => o.id == updatedOutfit.id,
+            );
+
+            if (index == -1) return;
+
+            setState(() {
+              outfits[index] = updatedOutfit;
+            });
+
+            await _saveOutfits();
+
           },
         ),
       ),

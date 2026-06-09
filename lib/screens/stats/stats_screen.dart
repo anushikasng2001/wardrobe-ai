@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:wardrobe_ai/constants/app_colors.dart';
 import 'package:wardrobe_ai/models/outfit.dart';
 import 'package:wardrobe_ai/models/wardrobe_item.dart';
 import 'package:wardrobe_ai/services/stats/stats_service.dart';
-import 'package:wardrobe_ai/widgets/outfit/outfit_preview.dart';
 import 'package:wardrobe_ai/widgets/stats/stats_card.dart';
+import 'package:wardrobe_ai/widgets/stats/outfit_gallery_section.dart';
 
 class StatsScreen extends StatelessWidget {
   final List<WardrobeItem> items;
@@ -42,6 +41,17 @@ class StatsScreen extends StatelessWidget {
     );
 
     return rated.take(3).toList();
+  }
+
+  List<Outfit> get mostWornOutfits {
+    final worn =
+        outfits.where((o) => o.wearCount > 0).toList();
+
+    worn.sort(
+      (a, b) => b.wearCount.compareTo(a.wearCount),
+    );
+
+    return worn.take(3).toList();
   }
 
   @override
@@ -115,113 +125,19 @@ class StatsScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             if (topRatedOutfits.isNotEmpty)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Best Outfit Gallery',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+              OutfitGallerySection(
+                title: 'Best Outfit Gallery',
+                outfits: topRatedOutfits,
+                type: OutfitGalleryType.rating,
+              ),
 
-                  const SizedBox(height: 12),
+            const SizedBox(height: 24),
 
-                  SizedBox(
-                    height: 220,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: topRatedOutfits.length,
-                      itemBuilder: (context, index) {
-                        final outfit =
-                            topRatedOutfits[index];
-
-                        return Container(
-                          width: 180,
-                          margin: const EdgeInsets.only(
-                            right: 12,
-                          ),
-                          child: Card(
-                            child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: ClipRRect(
-                                    borderRadius:
-                                        const BorderRadius.vertical(
-                                      top: Radius.circular(12),
-                                    ),
-                                    child: OutfitPreview(
-                                      images: outfit.imagePaths,
-                                    ),
-                                  ),
-                                ),
-
-                                Padding(
-                                  padding: const EdgeInsets.all(8),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.orange.withOpacity(0.15),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: Text(
-                                          '#${index + 1}',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: AppColors.orange,
-                                          ),
-                                        ),
-                                      ),
-
-                                      const SizedBox(height: 6),
-
-                                      Text(
-                                        outfit.name,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-
-                                      Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.star,
-                                            size: 16,
-                                            color: AppColors.amber,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            outfit.rating.toStringAsFixed(1),
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
+            if (mostWornOutfits.isNotEmpty)
+              OutfitGallerySection(
+                title: 'Most Worn Outfits',
+                outfits: mostWornOutfits,
+                type: OutfitGalleryType.wears,
               ),
           ],
         ),
