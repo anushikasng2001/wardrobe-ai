@@ -1,7 +1,13 @@
+import 'dart:math';
+
+import 'package:wardrobe_ai/constants/outfit_constants.dart';
+
 import '../../models/outfit.dart';
 import '../../models/wardrobe_item.dart';
 
 class OutfitGeneratorService {
+  
+  static final Random _random = Random();
 
   static bool colorsMatch(
     String topColor,
@@ -158,7 +164,9 @@ class OutfitGeneratorService {
           .microsecondsSinceEpoch
           .toString(),
 
-      name: '$occasion Outfit',
+      name: generateOutfitName(
+        occasion,
+      ),
 
       imagePaths: selected,
 
@@ -168,5 +176,19 @@ class OutfitGeneratorService {
 
       createdAt: DateTime.now(),
     );
+  }
+
+  static String generateOutfitName(
+    String occasion,
+  ) {
+
+    final adjective =
+        OutfitConstants.outfitAdjectives[
+          _random.nextInt(
+          OutfitConstants.outfitAdjectives.length,
+        )
+        ];
+
+    return '$adjective $occasion Outfit';
   }
 }

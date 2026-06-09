@@ -3,7 +3,6 @@ import 'package:wardrobe_ai/constants/app_colors.dart';
 import 'package:wardrobe_ai/models/outfit.dart';
 import 'package:wardrobe_ai/models/wardrobe_item.dart';
 import 'package:wardrobe_ai/screens/outfit/edit_outfit_screen.dart';
-import 'package:wardrobe_ai/services/history/outfit_history_service.dart';
 import 'package:wardrobe_ai/widgets/app_snackbar.dart';
 import 'package:wardrobe_ai/widgets/outfit/outfit_rating_bar.dart';
 import 'package:wardrobe_ai/widgets/outfit/outfit_share_card.dart';
@@ -15,12 +14,14 @@ class OutfitDetailScreen extends StatefulWidget {
   final Future<void> Function(Outfit)? onSave;
   final List<WardrobeItem> wardrobeItems;
   final Future<void> Function(Outfit)? onWorn;
+  final Future<void> Function(Outfit)? onUpdate;
 
   const OutfitDetailScreen({
     super.key,
     required this.outfit,
     this.onSave,
     this.onWorn,
+    this.onUpdate,
     this.wardrobeItems = const [],
   });
 
@@ -118,16 +119,26 @@ class _OutfitDetailScreenState
       _outfit = edited;
       _isSaved = false;
     });
+
+    await widget.onUpdate?.call(edited);
   }
 
-  void _updateRating(double rating) {
-    setState(() {
-      _outfit = _outfit.copyWith(
-        rating: rating,
-      );
+  Future<void> _updateRating(
+    double rating,
+  ) async {
 
+    final updated = _outfit.copyWith(
+      rating: rating,
+    );
+
+    setState(() {
+      _outfit = updated;
       _isSaved = false;
     });
+
+    if (widget.onUpdate != null) {
+      await widget.onUpdate!(updated);
+    }
   }
 
   @override
@@ -195,29 +206,54 @@ class _OutfitDetailScreenState
               : 'Worn Today',
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            OutfitShareCard(
-              outfit: _outfit,
-              repaintKey: repaintKey,
-            ),
+      body: Column(
+        children: [
 
-            const SizedBox(height: 16),
-
-            const Text(
-              'Rate this Outfit',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
+          Expanded(
+            child: SingleChildScrollView(
+              child: OutfitShareCard(
+                outfit: _outfit,
+                repaintKey: repaintKey,
               ),
             ),
+          ),
 
-            OutfitRatingBar(
-              rating: _outfit.rating,
-              onRatingChanged: _updateRating,
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
             ),
-          ],
-        ),
+            decoration: BoxDecoration(
+              color: Theme.of(context)
+                  .scaffoldBackgroundColor,
+              boxShadow: const [
+                BoxShadow(
+                  blurRadius: 8,
+                  color: Colors.black12,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+
+                const Text(
+                  'Rate this Outfit',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                OutfitRatingBar(
+                  rating: _outfit.rating,
+                  onRatingChanged: _updateRating,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

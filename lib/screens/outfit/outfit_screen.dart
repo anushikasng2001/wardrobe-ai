@@ -78,8 +78,24 @@ class _OutfitScreenState extends State<OutfitScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            OutfitDetailScreen(outfit: outfit),
+        builder: (_) => OutfitDetailScreen(
+          outfit: outfit,
+
+          onUpdate: (updatedOutfit) async {
+
+            final index = outfits.indexWhere(
+              (o) => o.id == updatedOutfit.id,
+            );
+
+            if (index == -1) return;
+
+            setState(() {
+              outfits[index] = updatedOutfit;
+            });
+
+            await _saveOutfits();
+          },
+        ),
       ),
     );
   }

@@ -9,7 +9,6 @@ import 'package:wardrobe_ai/services/history/outfit_history_service.dart';
 import 'package:wardrobe_ai/services/storage_service.dart';
 import 'package:wardrobe_ai/services/wardrobe/wardrobe_manager.dart';
 import 'package:wardrobe_ai/services/wardrobe/wardrobe_service.dart';
-import 'package:wardrobe_ai/services/history/outfit_history_service.dart';
 import 'package:wardrobe_ai/widgets/app_snackbar.dart';
 import 'package:wardrobe_ai/widgets/wardrobe/category_filter_bar.dart';
 import 'package:wardrobe_ai/widgets/wardrobe/edit_item_dialog.dart';
@@ -260,6 +259,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
       MaterialPageRoute(
         builder: (_) => StatsScreen(
           items: _items,
+          outfits: _outfits,
         ),
       ),
     );
