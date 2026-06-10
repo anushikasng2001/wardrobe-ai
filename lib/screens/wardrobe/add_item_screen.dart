@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:wardrobe_ai/constants/app_colors.dart';
 import 'package:wardrobe_ai/constants/wardrobe_constants.dart';
+import 'package:wardrobe_ai/models/pending_wardrobe_image.dart';
+import 'package:wardrobe_ai/services/ai/color_detection_service.dart';
+import 'package:wardrobe_ai/services/image/image_service.dart';
 import 'package:wardrobe_ai/widgets/add_item/add_item_dropdown.dart';
 import 'package:wardrobe_ai/widgets/add_item/selected_images_grid.dart';
+import 'package:wardrobe_ai/services/image/image_processing_service.dart';
 
 class AddItemScreen extends StatefulWidget {
   const AddItemScreen({super.key});
@@ -12,44 +17,111 @@ class AddItemScreen extends StatefulWidget {
 }
 
 class _AddItemScreenState extends State<AddItemScreen> {
-  final ImagePicker _picker = ImagePicker();
-  List<XFile> selectedImages = [];
-
+  List<PendingWardrobeImage> selectedImages = [];
   String selectedCategory = WardrobeConstants.itemCategories.first;
-
   String selectedColor = WardrobeConstants.colors.first;
+  bool _isProcessing = false;
+  bool _isDetectingColors = false;
 
   Future<void> _pickImages() async {
-    final images = await _picker.pickMultiImage();
+    final images =
+        await ImageService.pickMultipleFromGallery();
 
-    if (images.isNotEmpty) {
-      setState(() {
-        selectedImages.addAll(images) ;
-      });
-    }
-  }
+    if (images.isEmpty) return;
 
-  void _saveItems() {
-    if (selectedImages.isEmpty) return;
+    setState(() {
+      _isDetectingColors = true;
+    });
 
-    Navigator.pop(context, {
-      'imagePaths': selectedImages.map((e) => e.path).toList(),
-      'category': selectedCategory,
-      'color': selectedColor
+    final pendingImages = await Future.wait(
+      images.map((image) async {
+        final color =
+            await ColorDetectionService.detectColor(
+          image.path,
+        );
+
+        return PendingWardrobeImage(
+          image: image,
+          detectedColor: color,
+        );
+      }),
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isDetectingColors = false;
+      selectedImages.addAll(pendingImages);
     });
   }
 
+  Future<void> _saveItems() async {
+    if (selectedImages.isEmpty) return;
+
+    setState(() {
+      _isProcessing = true;
+    });
+
+    try {
+      final processedPaths = <String>[];
+
+      for (final image in selectedImages) {
+        final processed =
+            await ImageProcessingService.processImage(
+          image.image.path,
+        );
+
+        processedPaths.add(processed.path);
+      }
+
+      if (!mounted) return;
+
+      Navigator.pop(context, {
+        'items': selectedImages.asMap().entries.map((entry) {
+          return {
+            'imagePath': processedPaths[entry.key],
+            'color': selectedColor == 'Auto Detect'
+              ? entry.value.detectedColor
+              : selectedColor,
+            'category': selectedCategory,
+          };
+        }).toList(),
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
+  }
+
   Future<void> _takePhoto() async {
-    final image = await _picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 100,
+    final image =
+        await ImageService.pickFromCamera();
+
+    if (image == null) return;
+
+    setState(() {
+      _isDetectingColors = true;
+    });
+
+    final color =
+        await ColorDetectionService.detectColor(
+      image.path,
     );
 
-    if (image != null) {
-      setState(() {
-        selectedImages.add(image);
-      });
-    }
+    if (!mounted) return;
+
+    setState(() {
+      _isDetectingColors = false;
+      selectedImages.add(
+        PendingWardrobeImage(
+          image: XFile(image.path),
+          detectedColor: color,
+        ),
+      );
+    });
   }
 
   @override
@@ -64,7 +136,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: _takePhoto,
+                    onPressed: (_isProcessing || _isDetectingColors) ? null : _takePhoto,
                     icon: const Icon(Icons.camera_alt),
                     label: const Text('Take Photo'),
                   ),
@@ -74,34 +146,60 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: _pickImages,
+                    onPressed: (_isProcessing || _isDetectingColors) ? null : _pickImages,
                     icon: const Icon(Icons.photo_library),
                     label: const Text('Gallery'),
                   ),
                 ),
               ],
             ),
+            if (_isDetectingColors) ...[
+              const SizedBox(height: 12),
+              const LinearProgressIndicator(),
+            ],
             const SizedBox(height: 12),
             AddItemDropdown(
               label: 'Category',
               value: selectedCategory,
               options: WardrobeConstants.itemCategories,
-              onChanged: (value) {
-                setState(() {
-                  selectedCategory = value!;
-                });
-              },
+              onChanged: _isProcessing
+                ? null
+                : (value) {
+                    setState(() {
+                      selectedCategory = value!;
+                    });
+                  },
             ),
             const SizedBox(height: 12),
             AddItemDropdown(
-              label: 'Color',
+              label: 'Override Color',
               value: selectedColor,
               options: WardrobeConstants.colors,
-              onChanged: (value) {
-                setState(() {
-                  selectedColor = value!;
-                });
-              },
+              onChanged: _isProcessing
+                ? null
+                : (value) {
+                    setState(() {
+                      selectedColor = value!;
+                    });
+                  },
+            ),        
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${selectedImages.length} item(s)',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+
+                if (_isDetectingColors)
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 16),
             Expanded(
@@ -110,12 +208,19 @@ class _AddItemScreenState extends State<AddItemScreen> {
               ),
             ),
             ElevatedButton(
-              onPressed:
-                  selectedImages.isEmpty
-                      ? null
-                      : _saveItems,
-              child: const Text('Save Items'),
-            ),
+              onPressed: selectedImages.isEmpty || _isProcessing
+                  ? null
+                  : _saveItems,
+              child: _isProcessing
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text('Save Items'),
+            )
           ],
         ),
       ),

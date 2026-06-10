@@ -20,6 +20,7 @@ class WardrobeConstants {
   ];
 
   static const List<String> colors = [
+    'Auto Detect',
     'Black',
     'White',
     'Blue',

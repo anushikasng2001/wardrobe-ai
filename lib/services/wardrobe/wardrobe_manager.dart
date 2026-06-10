@@ -37,6 +37,27 @@ class WardrobeManager {
     );
   }
 
+  static void addDetectedItems({
+    required List<WardrobeItem> items,
+    required List<Map<String, dynamic>> detectedItems,
+  }) {
+
+    for (final item in detectedItems) {
+      final now = DateTime.now();
+      items.add(
+        WardrobeItem(
+          id: '${now.microsecondsSinceEpoch}',
+          imagePath: item['imagePath'],
+          category: item['category'],
+          color: item['color'],
+          isFavorite: false,
+          createdAt: now,
+          tags: const [],
+        )
+      );
+    }
+  }
+
   static Future<void> saveData({
     required List<WardrobeItem> items,
     required List<Outfit> outfits,

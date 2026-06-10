@@ -1,6 +1,9 @@
 $env:GRADLE_USER_HOME = "C:\gradle-home"
 $env:GRADLE_OPTS = "-Dorg.gradle.daemon=false"
-$watchPaths = @("C:\gradle-home\caches\8.13\transforms","C:\Users\anushika.singh\.gradle\caches\8.13\transforms")
+$watchPaths = @(
+    "C:\gradle-home\caches\8.13\transforms",
+    "C:\Users\anushika.singh\.gradle\caches\8.13\transforms"
+)
 $alreadyFixed = @{}
 $job = Start-Job -ScriptBlock {
     Set-Location "C:\FlutterProjects\wardrobe_ai"
@@ -18,22 +21,27 @@ while ($job.State -eq "Running") {
             $target = $_.Name -replace '-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', ''
             $targetPath = Join-Path $transforms $target
             $srcMeta = Join-Path $_.FullName "metadata.bin"
-            if ((Test-Path $srcMeta) -and ((Get-Item $srcMeta -ErrorAction SilentlyContinue).Length -gt 0) -and (Test-Path (Join-Path $_.FullName "transformed"))) {
-                Start-Sleep -Milliseconds 500
-                if (!(Test-Path $targetPath)) { Copy-Item $_.FullName $targetPath -Recurse -Force -ErrorAction SilentlyContinue }
-                else {
+            # Fix with OR without transformed folder — more aggressive
+            if ((Test-Path $srcMeta) -and ((Get-Item $srcMeta -ErrorAction SilentlyContinue).Length -gt 0)) {
+                Start-Sleep -Milliseconds 300
+                if (!(Test-Path $targetPath)) {
+                    Copy-Item $_.FullName $targetPath -Recurse -Force -ErrorAction SilentlyContinue
+                    Write-Host "Created: $target"
+                } else {
                     $dstSize = if (Test-Path "$targetPath\metadata.bin") { (Get-Item "$targetPath\metadata.bin").Length } else { -1 }
-                    if ($dstSize -le 0) { Copy-Item "$($_.FullName)\*" "$targetPath\" -Recurse -Force -ErrorAction SilentlyContinue }
+                    if ($dstSize -le 0) {
+                        Copy-Item "$($_.FullName)\*" "$targetPath\" -Recurse -Force -ErrorAction SilentlyContinue
+                        Write-Host "Fixed: $target"
+                    }
                 }
                 $alreadyFixed[$key] = $true
             }
         }
     }
-    Start-Sleep -Milliseconds 100
+    Start-Sleep -Milliseconds 50
 }
 Receive-Job $job | Write-Host
 Remove-Job $job -Force
-
 
 
 # PowerShell -ExecutionPolicy Bypass -File "C:\FlutterProjects\run.ps1"

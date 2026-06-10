@@ -51,7 +51,7 @@ class WardrobeItemTile extends StatelessWidget {
                             ? Icons.favorite
                             : Icons.favorite_border,
                         color: item.isFavorite
-                            ? AppColors.favorite
+                            ? AppColors.red
                             : AppColors.white,
                         size: 20,
                       ),

@@ -23,7 +23,7 @@ void showWardrobeActionsSheet({
             ListTile(
               leading: const Icon(
                 Icons.delete,
-                color: AppColors.favorite,
+                color: AppColors.red,
               ),
               title: const Text('Delete'),
               onTap: () {

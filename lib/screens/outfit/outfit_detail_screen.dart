@@ -169,7 +169,7 @@ class _OutfitDetailScreenState
                 _isSaved
                     ? Icons.bookmark
                     : Icons.bookmark_add,
-                color: _isSaved ? AppColors.selected : null,
+                color: _isSaved ? AppColors.green : null,
               ),
               onPressed: _isSaved
               ? null

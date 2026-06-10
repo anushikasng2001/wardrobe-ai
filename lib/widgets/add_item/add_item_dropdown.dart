@@ -4,7 +4,7 @@ class AddItemDropdown extends StatelessWidget {
   final String label;
   final String value;
   final List<String> options;
-  final ValueChanged<String?> onChanged;
+  final ValueChanged<String?>? onChanged;
 
   const AddItemDropdown({
     super.key,

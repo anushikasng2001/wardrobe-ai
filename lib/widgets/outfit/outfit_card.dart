@@ -98,7 +98,7 @@ class OutfitCard extends StatelessWidget {
                           ? Icons.favorite
                           : Icons.favorite_border,
                       color: outfit.isFavorite
-                          ? AppColors.favorite
+                          ? AppColors.red
                           : AppColors.grey,
                     ),
                     onPressed: onFavorite,

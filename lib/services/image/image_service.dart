@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:image_picker/image_picker.dart';
-import 'package:image_cropper/image_cropper.dart';
 
 class ImageService {
   static final ImagePicker _picker =
@@ -15,7 +14,7 @@ class ImageService {
 
     if (image == null) return null;
 
-    return _cropImage(image.path);
+    return File(image.path);
   }
 
   static Future<File?> pickFromGallery() async {
@@ -26,26 +25,14 @@ class ImageService {
 
     if (image == null) return null;
 
-    return _cropImage(image.path);
+    return File(image.path);
   }
 
-  static Future<File?> _cropImage(
-    String path,
-  ) async {
-    final cropped =
-        await ImageCropper().cropImage(
-      sourcePath: path,
-      compressQuality: 90,
-      uiSettings: [
-        AndroidUiSettings(
-          toolbarTitle: 'Crop Image',
-          lockAspectRatio: false,
-        ),
-      ],
+  static Future<List<XFile>> pickMultipleFromGallery() async {
+    final images = await _picker.pickMultiImage(
+      imageQuality: 90,
     );
 
-    if (cropped == null) return null;
-
-    return File(cropped.path);
+    return images;
   }
 }

@@ -35,7 +35,7 @@ class OutfitSelectionTile extends StatelessWidget {
               right: 4,
               child: Icon(
                 Icons.check_circle,
-                color: AppColors.selected,
+                color: AppColors.green,
               ),
             ),
         ],

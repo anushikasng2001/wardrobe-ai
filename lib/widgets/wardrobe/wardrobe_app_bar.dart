@@ -34,7 +34,7 @@ class WardrobeAppBar extends StatelessWidget
                 ? Icons.favorite
                 : Icons.favorite_border,
             color: showFavoritesOnly
-                  ? AppColors.favorite
+                  ? AppColors.red
                   : AppColors.grey,
           ),
           onPressed: onToggleFavorites,

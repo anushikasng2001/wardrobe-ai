@@ -100,20 +100,15 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
 
     if (result == null) return;
 
-    final imagePaths =
-        List<String>.from(result['imagePaths']);
-
-    final category = result['category'];
-    final color = result['color'];  
-
-    if (category == null || color == null) return;
+    final items =
+        List<Map<String, dynamic>>.from(
+      result['items'],
+    );
 
     setState(() {
-      WardrobeManager.addItems(
+      WardrobeManager.addDetectedItems(
         items: _items,
-        imagePaths: imagePaths,
-        category: category,
-        color: color,
+        detectedItems: items,
       );
     });
 
