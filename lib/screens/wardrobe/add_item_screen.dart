@@ -24,7 +24,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
     if (images.isNotEmpty) {
       setState(() {
-        selectedImages = images;
+        selectedImages.addAll(images) ;
       });
     }
   }
@@ -39,6 +39,19 @@ class _AddItemScreenState extends State<AddItemScreen> {
     });
   }
 
+  Future<void> _takePhoto() async {
+    final image = await _picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 100,
+    );
+
+    if (image != null) {
+      setState(() {
+        selectedImages.add(image);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,10 +60,26 @@ class _AddItemScreenState extends State<AddItemScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            ElevatedButton.icon(
-              onPressed: _pickImages,
-              icon: const Icon(Icons.photo_library),
-              label: const Text('Select Images'),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _takePhoto,
+                    icon: const Icon(Icons.camera_alt),
+                    label: const Text('Take Photo'),
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _pickImages,
+                    icon: const Icon(Icons.photo_library),
+                    label: const Text('Gallery'),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             AddItemDropdown(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wardrobe_ai/constants/app_colors.dart';
 import 'package:wardrobe_ai/models/wardrobe_item.dart';
-import 'package:wardrobe_ai/widgets/safe_image.dart';
+import 'package:wardrobe_ai/services/image/safe_image.dart';
 
 class OutfitSelectionTile extends StatelessWidget {
   final WardrobeItem item;

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/outfit.dart';
 import '../../models/wardrobe_item.dart';
-import '../../widgets/safe_image.dart';
+import '../../services/image/safe_image.dart';
 
 class EditOutfitScreen extends StatefulWidget {
   final Outfit outfit;

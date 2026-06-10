@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:wardrobe_ai/services/history/history_grouping_service.dart';
-import 'package:wardrobe_ai/widgets/safe_image.dart';
+import 'package:wardrobe_ai/services/image/safe_image.dart';
 
 import '../../models/outfit_history.dart';
 

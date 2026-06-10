@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:wardrobe_ai/constants/grid_layouts.dart';
-import 'package:wardrobe_ai/widgets/safe_image.dart';
+import 'package:wardrobe_ai/services/image/safe_image.dart';
 
 class SelectedImagesGrid extends StatelessWidget {
   final List<XFile> images;
