@@ -57,25 +57,28 @@ class SelectedImagesGrid extends StatelessWidget {
                 ),
               ),
 
-              Padding(
-                padding: const EdgeInsets.all(4),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6,
+                  vertical: 2,
+                ),
+                child: Row(
                   children: [
-                    Text(
-                      item.detectedColor,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                    Expanded(
+                      child: Text(
+                        item.detectedCategory,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                      textAlign: TextAlign.center,
                     ),
 
-                    const SizedBox(height: 4),
-
                     Container(
-                      width: 16,
-                      height: 16,
+                      width: 10,
+                      height: 10,
                       decoration: BoxDecoration(
                         color: _mapColor(item.detectedColor),
                         shape: BoxShape.circle,

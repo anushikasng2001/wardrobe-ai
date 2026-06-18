@@ -100,15 +100,17 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
 
     if (result == null) return;
 
-    final items =
+    final detectedItems =
         List<Map<String, dynamic>>.from(
-      result['items'],
+      result['items'] ?? [],
     );
+
+    if (detectedItems.isEmpty) return;
 
     setState(() {
       WardrobeManager.addDetectedItems(
         items: _items,
-        detectedItems: items,
+        detectedItems: detectedItems,
       );
     });
 

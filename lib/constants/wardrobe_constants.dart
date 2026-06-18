@@ -11,6 +11,7 @@ class WardrobeConstants {
   ];
 
   static const List<String> itemCategories = [
+    'Auto Detect',
     'Top',
     'Bottom',
     'Dress',
@@ -19,7 +20,7 @@ class WardrobeConstants {
     'Jacket',
   ];
 
-  static const List<String> colors = [
+  static const List<String> itemColors = [
     'Auto Detect',
     'Black',
     'White',

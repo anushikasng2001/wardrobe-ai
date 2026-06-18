@@ -14,6 +14,8 @@ class WardrobeItem {
   final String season;
   final String brand;
   final String notes;
+  final double confidence;
+  final List<double>? embedding;
 
   const WardrobeItem({
     required this.id,
@@ -30,6 +32,8 @@ class WardrobeItem {
     this.season = '',
     this.brand = '',
     this.notes = '',
+    this.confidence = 0,
+    this.embedding,
   });
 
   Map<String, dynamic> toJson() {
@@ -47,6 +51,8 @@ class WardrobeItem {
       'season': season,
       'brand': brand,
       'notes': notes,
+      'confidence': confidence,
+      'embedding': embedding,
     };
   }
 
@@ -69,6 +75,13 @@ class WardrobeItem {
       season: json['season'] ?? '',
       brand: json['brand'] ?? '',
       notes: json['notes'] ?? '',
+      confidence: (json['confidence'] ?? 0).toDouble(),
+      embedding: json['embedding'] != null
+          ? List<double>.from(
+              (json['embedding'] as List<dynamic>)
+                  .map((e) => (e as num).toDouble()),
+            )
+          : null,
     );
   }
 
@@ -104,6 +117,8 @@ class WardrobeItem {
     String? season,
     String? brand,
     String? notes,
+    double? confidence,
+    List<double>? embedding,
   }) {
     return WardrobeItem(
       id: id ?? this.id,
@@ -119,6 +134,8 @@ class WardrobeItem {
       season: season ?? this.season,
       brand: brand ?? this.brand,
       notes: notes ?? this.notes,
+      confidence: confidence ?? this.confidence,
+      embedding: embedding ?? this.embedding,
     );
   }
 }

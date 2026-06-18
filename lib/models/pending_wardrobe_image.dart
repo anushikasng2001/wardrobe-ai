@@ -2,12 +2,16 @@ import 'package:image_picker/image_picker.dart';
 
 class PendingWardrobeImage {
   final XFile image;
-  String detectedColor;
-  String? detectedCategory;
+  final String detectedColor;
+  final String detectedCategory;
+  final String? detectedSubCategory;
+  final double confidence;
 
-  PendingWardrobeImage({
+  const PendingWardrobeImage({
     required this.image,
     required this.detectedColor,
-    this.detectedCategory,
+    required this.detectedCategory,
+    this.detectedSubCategory,
+    required this.confidence
   });
 }

@@ -38,7 +38,7 @@ Future<Map<String, String>?> showEditItemDialog({
                 const SizedBox(height: 12),
                 DropdownButtonFormField(
                   value: selectedColor,
-                  items: WardrobeConstants.colors
+                  items: WardrobeConstants.itemColors
                       .map(
                         (e) => DropdownMenuItem(
                           value: e,

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:wardrobe_ai/constants/app_colors.dart';
 import 'package:wardrobe_ai/constants/wardrobe_constants.dart';
 import 'package:wardrobe_ai/models/pending_wardrobe_image.dart';
-import 'package:wardrobe_ai/services/ai/color_detection_service.dart';
+import 'package:wardrobe_ai/services/image/garment_extraction_service.dart';
 import 'package:wardrobe_ai/services/image/image_service.dart';
+import 'package:wardrobe_ai/services/ai/gemini_clothing_service.dart';
 import 'package:wardrobe_ai/widgets/add_item/add_item_dropdown.dart';
 import 'package:wardrobe_ai/widgets/add_item/selected_images_grid.dart';
 import 'package:wardrobe_ai/services/image/image_processing_service.dart';
@@ -19,9 +19,83 @@ class AddItemScreen extends StatefulWidget {
 class _AddItemScreenState extends State<AddItemScreen> {
   List<PendingWardrobeImage> selectedImages = [];
   String selectedCategory = WardrobeConstants.itemCategories.first;
-  String selectedColor = WardrobeConstants.colors.first;
+  String selectedColor = WardrobeConstants.itemColors.first;
   bool _isProcessing = false;
-  bool _isDetectingColors = false;
+  bool _isAnalyzingImages  = false;
+  static const _minConfidence = 0.75;
+
+  List<Map<String, dynamic>> _filterItems(
+    List<Map<String, dynamic>> items,
+  ) {
+    items.sort(
+      (a, b) => (
+        (b['confidence'] ?? 0) as num
+      ).compareTo(
+        (a['confidence'] ?? 0) as num,
+      ),
+    );
+
+    return items.where((item) {
+      final confidence =
+          (item['confidence'] as num?)
+              ?.toDouble() ??
+          0.0;
+
+      return confidence >= _minConfidence;
+    }).toList();
+  }
+
+  Future<List<PendingWardrobeImage>>
+      _buildPendingImages(
+    XFile image,
+    List<Map<String, dynamic>> detectedItems,
+  ) async {
+    final filteredItems =
+        _filterItems(detectedItems);
+
+    if (filteredItems.isEmpty) {
+      return [
+        PendingWardrobeImage(
+          image: image,
+          detectedColor: 'Unknown',
+          detectedCategory: 'Unknown',
+          confidence: 0,
+        ),
+      ];
+    }
+
+    final results = <PendingWardrobeImage>[];
+
+    for (final item in filteredItems) {
+      final extractedFile =
+          await GarmentExtractionService
+              .extractGarment(
+        imagePath: image.path,
+        category:
+            item['category'] ?? 'Unknown',
+        subCategory:
+            item['subcategory'],
+      );
+
+      results.add(
+        PendingWardrobeImage(
+          image: XFile(extractedFile.path),
+          detectedColor:
+              item['color'] ?? 'Unknown',
+          detectedCategory:
+              item['category'] ?? 'Unknown',
+          detectedSubCategory:
+              item['subcategory'],
+          confidence:
+              (item['confidence'] as num?)
+                  ?.toDouble() ??
+              0.0,
+        ),
+      );
+    }
+
+    return results;
+  }
 
   Future<void> _pickImages() async {
     final images =
@@ -30,29 +104,39 @@ class _AddItemScreenState extends State<AddItemScreen> {
     if (images.isEmpty) return;
 
     setState(() {
-      _isDetectingColors = true;
+      _isAnalyzingImages = true;
     });
 
-    final pendingImages = await Future.wait(
-      images.map((image) async {
-        final color =
-            await ColorDetectionService.detectColor(
+    try {
+      final List<PendingWardrobeImage> pendingImages = [];
+
+      for (final image in images) {
+        final detectedItems =
+            await GeminiClothingService.detectItems(
           image.path,
         );
 
-        return PendingWardrobeImage(
-          image: image,
-          detectedColor: color,
-        );
-      }),
-    );
+        final pending =
+            await _buildPendingImages(
+              image,
+              detectedItems,
+            );
 
-    if (!mounted) return;
+        pendingImages.addAll(pending);
+      }
 
-    setState(() {
-      _isDetectingColors = false;
-      selectedImages.addAll(pendingImages);
-    });
+      if (!mounted) return;
+
+      setState(() {
+        selectedImages.addAll(pendingImages);
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAnalyzingImages = false;
+        });
+      }
+    }
   }
 
   Future<void> _saveItems() async {
@@ -83,7 +167,11 @@ class _AddItemScreenState extends State<AddItemScreen> {
             'color': selectedColor == 'Auto Detect'
               ? entry.value.detectedColor
               : selectedColor,
-            'category': selectedCategory,
+            'category': selectedCategory == 'Auto Detect'
+              ? entry.value.detectedCategory
+              : selectedCategory,
+            'subcategory': entry.value.detectedSubCategory,
+            'confidence': entry.value.confidence,
           };
         }).toList(),
       });
@@ -97,31 +185,41 @@ class _AddItemScreenState extends State<AddItemScreen> {
   }
 
   Future<void> _takePhoto() async {
-    final image =
-        await ImageService.pickFromCamera();
+    final image = await ImageService.pickFromCamera();
 
     if (image == null) return;
 
     setState(() {
-      _isDetectingColors = true;
+      _isAnalyzingImages = true;
     });
 
-    final color =
-        await ColorDetectionService.detectColor(
-      image.path,
-    );
-
-    if (!mounted) return;
-
-    setState(() {
-      _isDetectingColors = false;
-      selectedImages.add(
-        PendingWardrobeImage(
-          image: XFile(image.path),
-          detectedColor: color,
-        ),
+    try {
+      final detectedItems =
+          await GeminiClothingService.detectItems(
+        image.path,
       );
-    });
+
+      if (!mounted) return;
+
+      final pendingImages =
+          await _buildPendingImages(
+            XFile(image.path),
+            detectedItems,
+          );
+
+      if (!mounted) return;
+
+      setState(() {
+        selectedImages.addAll(pendingImages);
+      });
+
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAnalyzingImages = false;
+        });
+      }
+    }
   }
 
   @override
@@ -136,7 +234,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: (_isProcessing || _isDetectingColors) ? null : _takePhoto,
+                    onPressed: (_isProcessing || _isAnalyzingImages) ? null : _takePhoto,
                     icon: const Icon(Icons.camera_alt),
                     label: const Text('Take Photo'),
                   ),
@@ -146,16 +244,20 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: (_isProcessing || _isDetectingColors) ? null : _pickImages,
+                    onPressed: (_isProcessing || _isAnalyzingImages) ? null : _pickImages,
                     icon: const Icon(Icons.photo_library),
                     label: const Text('Gallery'),
                   ),
                 ),
               ],
             ),
-            if (_isDetectingColors) ...[
+            if (_isAnalyzingImages) ...[
               const SizedBox(height: 12),
               const LinearProgressIndicator(),
+              const SizedBox(height: 8),
+              const Text(
+                'Detecting category and color...',
+              ),
             ],
             const SizedBox(height: 12),
             AddItemDropdown(
@@ -174,7 +276,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
             AddItemDropdown(
               label: 'Override Color',
               value: selectedColor,
-              options: WardrobeConstants.colors,
+              options: WardrobeConstants.itemColors,
               onChanged: _isProcessing
                 ? null
                 : (value) {
@@ -191,7 +293,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
 
-                if (_isDetectingColors)
+                if (_isAnalyzingImages)
                   const SizedBox(
                     width: 16,
                     height: 16,
